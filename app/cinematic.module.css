@@ -1,0 +1,261 @@
+.stageBoost {
+  --cinema-cold: rgba(163, 205, 197, .36);
+  --cinema-warm: rgba(195, 151, 95, .2);
+}
+
+.stageBoost::before,
+.stageBoost::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.stageBoost::before {
+  opacity: .2;
+  background:
+    linear-gradient(90deg, transparent 11.8%, rgba(255,255,255,.025) 12%, transparent 12.2%, transparent 87.8%, rgba(255,255,255,.025) 88%, transparent 88.2%),
+    linear-gradient(180deg, transparent 17.8%, rgba(255,255,255,.018) 18%, transparent 18.2%, transparent 81.8%, rgba(255,255,255,.018) 82%, transparent 82.2%);
+}
+
+.stageBoost::after {
+  opacity: calc(.12 + var(--impact) * .22 + var(--gateway) * .08);
+  background:
+    radial-gradient(circle at 50% 50%, transparent 0 32%, rgba(150,196,185,.04) 44%, transparent 60%),
+    conic-gradient(from 180deg at 50% 50%, transparent 0 23%, rgba(255,255,255,.018) 24%, transparent 25% 49%, rgba(255,255,255,.015) 50%, transparent 51% 74%, rgba(255,255,255,.018) 75%, transparent 76% 100%);
+  transform: scale(calc(1 + var(--impact) * .035));
+}
+
+.scanBeam {
+  position: absolute;
+  left: -8%;
+  right: -8%;
+  top: calc(var(--scan) * 1%);
+  height: 18vh;
+  min-height: 100px;
+  opacity: .18;
+  background: linear-gradient(180deg, transparent, rgba(171,215,204,.045) 46%, rgba(232,245,237,.075) 50%, rgba(171,215,204,.025) 54%, transparent);
+  filter: blur(12px);
+  mix-blend-mode: screen;
+  transform: translateY(-50%);
+}
+
+.edgeGlow {
+  position: absolute;
+  inset: 0;
+  opacity: calc(.35 + var(--impact) * .28);
+  background:
+    linear-gradient(90deg, rgba(146,198,188,.045), transparent 7%, transparent 93%, rgba(184,142,88,.035)),
+    linear-gradient(180deg, rgba(255,255,255,.025), transparent 11%, transparent 89%, rgba(255,255,255,.018));
+  mix-blend-mode: screen;
+}
+
+.frameCorners {
+  position: fixed;
+  inset: 74px 26px 28px;
+  z-index: 28;
+  pointer-events: none;
+}
+
+.frameCorners i {
+  position: absolute;
+  width: 35px;
+  height: 35px;
+  opacity: calc(.22 + var(--impact) * .24);
+  transition: opacity 180ms ease;
+}
+
+.frameCorners i:nth-child(1) {
+  left: 0;
+  top: 0;
+  border-left: 1px solid rgba(255,255,255,.23);
+  border-top: 1px solid rgba(255,255,255,.23);
+}
+.frameCorners i:nth-child(2) {
+  right: 0;
+  top: 0;
+  border-right: 1px solid rgba(255,255,255,.23);
+  border-top: 1px solid rgba(255,255,255,.23);
+}
+.frameCorners i:nth-child(3) {
+  left: 0;
+  bottom: 0;
+  border-left: 1px solid rgba(255,255,255,.16);
+  border-bottom: 1px solid rgba(255,255,255,.16);
+}
+.frameCorners i:nth-child(4) {
+  right: 0;
+  bottom: 0;
+  border-right: 1px solid rgba(255,255,255,.16);
+  border-bottom: 1px solid rgba(255,255,255,.16);
+}
+
+.sceneGhost {
+  position: fixed;
+  z-index: 6;
+  left: clamp(35px, 4.5vw, 76px);
+  top: 50%;
+  width: min(58vw, 960px);
+  transform: translateY(-50%);
+  pointer-events: none;
+  user-select: none;
+  mix-blend-mode: screen;
+}
+
+.sceneGhost span {
+  display: block;
+  color: rgba(220,236,228,.025);
+  font-size: clamp(210px, 34vw, 590px);
+  font-weight: 900;
+  line-height: .7;
+  letter-spacing: -.09em;
+  transform: translateX(calc(var(--story-progress) * -22px));
+  text-shadow:
+    1px 0 rgba(148,202,193,.025),
+    -1px 0 rgba(201,155,100,.018);
+}
+
+.sceneGhost b {
+  position: absolute;
+  left: clamp(112px, 13vw, 230px);
+  bottom: 2.5%;
+  color: rgba(235,244,239,.045);
+  font-size: clamp(48px, 9vw, 148px);
+  line-height: .8;
+  letter-spacing: -.055em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  font-weight: 800;
+  transform: translateX(calc(var(--impact) * 18px));
+}
+
+.sceneCaption {
+  position: fixed;
+  z-index: 31;
+  right: clamp(58px, 7vw, 110px);
+  bottom: 76px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: end;
+  width: min(390px, 31vw);
+  gap: 7px 13px;
+  padding-top: 11px;
+  border-top: 1px solid rgba(255,255,255,.12);
+  pointer-events: none;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-transform: uppercase;
+}
+
+.sceneCaption span {
+  grid-row: 1 / span 2;
+  color: rgba(226,237,230,.72);
+  font-size: 10px;
+  letter-spacing: .18em;
+}
+
+.sceneCaption strong {
+  color: rgba(255,255,255,.48);
+  font-size: 8px;
+  line-height: 1.35;
+  letter-spacing: .14em;
+  font-weight: 500;
+}
+
+.sceneCaption small {
+  color: rgba(255,255,255,.22);
+  font-size: 7px;
+  letter-spacing: .15em;
+}
+
+.signalBand {
+  position: fixed;
+  z-index: 34;
+  left: 0;
+  right: 0;
+  bottom: 2px;
+  height: 25px;
+  overflow: hidden;
+  border-top: 1px solid rgba(255,255,255,.055);
+  background: rgba(1,3,4,.34);
+  backdrop-filter: blur(7px);
+  pointer-events: none;
+}
+
+.signalBand > div {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  height: 100%;
+  gap: 22px;
+  padding-left: 24px;
+  animation: ticker 24s linear infinite;
+  color: rgba(255,255,255,.27);
+  font: 7px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .2em;
+}
+
+.signalBand span {
+  white-space: nowrap;
+}
+
+.signalBand i {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(202,222,209,.45);
+  box-shadow: 0 0 8px rgba(171,210,195,.35);
+}
+
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@media (max-width: 900px) {
+  .sceneGhost {
+    left: 14px;
+    width: 80vw;
+  }
+  .sceneGhost span {
+    font-size: clamp(180px, 48vw, 390px);
+  }
+  .sceneGhost b {
+    left: 80px;
+    font-size: clamp(42px, 13vw, 98px);
+  }
+  .sceneCaption {
+    right: 28px;
+    bottom: 66px;
+    width: 250px;
+  }
+  .frameCorners {
+    inset: 66px 16px 34px;
+  }
+}
+
+@media (max-width: 620px) {
+  .stageBoost::before,
+  .stageBoost::after,
+  .sceneGhost,
+  .sceneCaption,
+  .frameCorners {
+    display: none;
+  }
+  .signalBand {
+    height: 22px;
+  }
+  .signalBand > div {
+    gap: 16px;
+    animation-duration: 30s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signalBand > div {
+    animation: none;
+  }
+  .scanBeam {
+    display: none;
+  }
+}
