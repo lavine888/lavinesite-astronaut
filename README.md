@@ -2,7 +2,7 @@
 
 An interactive cinematic prologue for Lavine Xie's personal website.
 
-This repository contains the standalone dynamic landing experience inspired by cinematic WebGL/scroll storytelling, while the main information-rich portfolio remains in the original `lavine-site` repository.
+This repository contains the standalone realtime WebGL landing experience. The main information-rich portfolio remains in the original `lavine-site` repository.
 
 ## Run locally
 
@@ -18,8 +18,16 @@ Open `http://localhost:3000`.
 - Next.js 14
 - React 18
 - TypeScript
-- Scroll-scrubbed video timeline
+- Three.js / persistent WebGL world
+- Scroll-driven camera dolly
+- Instanced geometry + GPU particles
 - CSS-driven HUD / archive interface
+
+## Deployment
+
+- GitHub: `lavine888/lavinesite-astronaut`
+- Vercel project: `lavine/lavinesite-astronaut`
+- Production branch: `main`
 
 ## Links
 
