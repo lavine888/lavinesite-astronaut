@@ -5,7 +5,7 @@ import SceneCanvas from "./scene-canvas";
 import styles from "./page.module.css";
 
 const MAIN_PROFILE = "https://lavine-site.vercel.app/profile";
-const SCENE_LABELS = ["INITIALIZE", "THRESHOLD", "IDENTITY", "ARTIFACTS", "ARCHIVE"];
+const SCENE_LABELS = ["ORIGIN", "THRESHOLD", "LOGIC", "ARTIFACTS", "GATEWAY"];
 
 const artifacts = [
   {
@@ -39,20 +39,23 @@ const artifacts = [
 ];
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+const pulse = (value: number, center: number, radius: number) => Math.max(0, 1 - Math.abs(value - center) / radius);
 
-function sceneOpacity(position: number, center: number, radius = 0.7) {
+function sceneOpacity(position: number, center: number, radius = 0.72) {
   return clamp(1 - Math.abs(position - center) / radius, 0, 1);
 }
 
 export default function LavineArchive() {
+  const stageRef = useRef<HTMLElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
   const chapterRefs = useRef<Array<HTMLElement | null>>([]);
   const activeSceneRef = useRef(0);
   const [activeScene, setActiveScene] = useState(0);
 
   useEffect(() => {
+    const stage = stageRef.current;
     const progressBar = progressRef.current;
-    if (!progressBar) return;
+    if (!stage || !progressBar) return;
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let target = 0;
@@ -72,6 +75,13 @@ export default function LavineArchive() {
       current += (target - current) * smoothing;
 
       progressBar.style.transform = `scaleX(${current})`;
+      const hatchImpact = pulse(current, 0.235, 0.075);
+      const gatewayImpact = pulse(current, 0.91, 0.12);
+      const impact = Math.max(hatchImpact, gatewayImpact * 0.58);
+      stage.style.setProperty("--impact", impact.toFixed(4));
+      stage.style.setProperty("--story-progress", current.toFixed(4));
+      stage.style.setProperty("--gateway", clamp((current - 0.78) / 0.22, 0, 1).toFixed(4));
+
       const position = current * (SCENE_LABELS.length - 1);
       const nextScene = clamp(Math.round(position), 0, SCENE_LABELS.length - 1);
       if (nextScene !== activeSceneRef.current) {
@@ -81,9 +91,9 @@ export default function LavineArchive() {
 
       chapterRefs.current.forEach((node, index) => {
         if (!node) return;
-        const opacity = sceneOpacity(position, index, index === 0 ? 0.8 : 0.72);
+        const opacity = sceneOpacity(position, index, index === 0 ? 0.82 : 0.74);
         const offset = clamp((position - index) * -58, -46, 46);
-        const scale = 0.986 + opacity * 0.014;
+        const scale = 0.985 + opacity * 0.015;
         node.style.opacity = opacity.toFixed(3);
         node.style.transform = `translate3d(0, ${offset}px, 0) scale(${scale})`;
         node.style.pointerEvents = opacity > 0.58 ? "auto" : "none";
@@ -103,7 +113,7 @@ export default function LavineArchive() {
   }, []);
 
   return (
-    <main className={styles.stage}>
+    <main ref={stageRef} className={styles.stage}>
       <SceneCanvas />
 
       <div className={styles.fx} aria-hidden="true">
@@ -112,6 +122,7 @@ export default function LavineArchive() {
         <div className={styles.scanlines} />
         <div className={styles.grain} />
         <div className={styles.reticle} />
+        <div className={styles.transitionFlash} />
       </div>
 
       <header className={styles.header}>
@@ -119,21 +130,21 @@ export default function LavineArchive() {
           <span className={styles.mark}>LX</span>
           <span className={styles.brandCopy}>
             <b>LAVINE / ARCHIVE</b>
-            <small>REALTIME WEBGL PROLOGUE</small>
+            <small>PERSONAL SYSTEMS / SELECTED OBJECTS</small>
           </span>
         </a>
         <div className={styles.headerMeta}>
-          <span>SESSION 09.2026</span>
-          <span>HK / SZ</span>
-          <span className={styles.live}><i /> RENDER ONLINE</span>
+          <span>SECTOR 09 / 2026</span>
+          <span>22.3°N / 114.2°E</span>
+          <span className={styles.live}><i /> SIGNAL 98.4</span>
         </div>
-        <a href={MAIN_PROFILE} className={styles.skip}>Skip to profile ↗</a>
+        <a href={MAIN_PROFILE} className={styles.skip}>Enter profile ↗</a>
       </header>
 
       <aside className={styles.telemetry} aria-hidden="true">
-        <div><span>ENGINE</span><b>WEBGL / THREE</b></div>
-        <div><span>MODE</span><b>CAMERA DOLLY</b></div>
-        <div><span>STATUS</span><b>BUILDING</b></div>
+        <div><span>SECTOR</span><b>PERSONAL ARCHIVE</b></div>
+        <div><span>ORIGIN</span><b>HK / SZ</b></div>
+        <div><span>STATE</span><b>IN MOTION</b></div>
         <div><span>NODE</span><b>LX-888</b></div>
       </aside>
 
@@ -153,10 +164,13 @@ export default function LavineArchive() {
         className={`${styles.chapter} ${styles.hero}`}
       >
         <div className={styles.heroTopline}>
-          <span>INITIALIZING PERSONAL ARCHIVE</span>
-          <span>REALTIME / 60FPS TARGET</span>
+          <span>PERSONAL ARCHIVE / ACCESS CHANNEL</span>
+          <span>EST. 2026</span>
         </div>
-        <h1><span>LAVINE</span><span>ARCHIVE</span></h1>
+        <h1>
+          <span data-text="LAVINE">LAVINE</span>
+          <span data-text="ARCHIVE">ARCHIVE</span>
+        </h1>
         <div className={styles.heroFooter}>
           <p>AI PRODUCT BUILDER / QUANTITATIVE SYSTEMS</p>
           <p className={styles.hint}><i /> Scroll to enter</p>
@@ -170,11 +184,11 @@ export default function LavineArchive() {
         <p className={styles.eyebrow}>ARCHIVE 00 / THRESHOLD</p>
         <h2>ENTER<br />THE HATCH</h2>
         <div className={styles.copyRow}>
-          <p>The page is no longer scrubbing a film. Scroll now moves a camera through one persistent world.</p>
+          <p>The door only opens one way: forward. Beyond it sits a record of products, systems and experiments that survived contact with reality.</p>
           <div className={styles.accessCard}>
-            <span>RENDER PATH</span>
-            <b>GPU</b>
-            <small>PERSISTENT SCENE / ACTIVE</small>
+            <span>ACCESS</span>
+            <b>GRANTED</b>
+            <small>CHANNEL / LX-888</small>
           </div>
         </div>
       </section>
@@ -189,7 +203,7 @@ export default function LavineArchive() {
           <div><span>02</span><b>MEASURE</b><small>Replace demo confidence with evidence.</small></div>
           <div><span>03</span><b>SHIP</b><small>Keep the loop moving in the real world.</small></div>
         </div>
-        <p className={styles.identityStatement}>One world. One camera.<br />Objects become the navigation.</p>
+        <p className={styles.identityStatement}>Small credible systems.<br />Fast feedback. Real artifacts.</p>
       </section>
 
       <section
@@ -201,7 +215,7 @@ export default function LavineArchive() {
             <p className={styles.eyebrow}>ARCHIVE 02 / SELECTED OBJECTS</p>
             <h2>ARTIFACTS</h2>
           </div>
-          <p>The physical objects behind this interface now exist inside the WebGL scene instead of being implied by a background film.</p>
+          <p>Four objects from the archive. Each one points back to something that was actually built, tested or shipped.</p>
         </div>
         <div className={styles.artifactGrid}>
           {artifacts.map((artifact) => (
@@ -222,7 +236,7 @@ export default function LavineArchive() {
       >
         <p className={styles.eyebrow}>ARCHIVE 03 / GATEWAY</p>
         <h2>THE ARCHIVE<br />IS OPEN</h2>
-        <p className={styles.finalCopy}>The realtime prologue ends here. The useful details start on the other side.</p>
+        <p className={styles.finalCopy}>The cinematic layer ends here. The actual work, context and details continue on the other side.</p>
         <div className={styles.finalActions}>
           <a href={MAIN_PROFILE} className={styles.enter}>Enter profile <span>↗</span></a>
           <a href="https://github.com/lavine888" target="_blank" rel="noreferrer" className={styles.secondary}>GitHub / source</a>
@@ -232,7 +246,7 @@ export default function LavineArchive() {
       <div className={styles.progressTrack} aria-hidden="true">
         <div ref={progressRef} className={styles.progress} />
       </div>
-      <div className={styles.cornerCode} aria-hidden="true">LX / WEBGL / 888</div>
+      <div className={styles.cornerCode} aria-hidden="true">LX / ARCHIVE / 888</div>
     </main>
   );
 }
