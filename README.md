@@ -2,6 +2,8 @@
 
 An interactive cinematic prologue for Lavine Xie's personal website.
 
+> **Live Demo:** https://lavinesite-astronaut-lavine.vercel.app
+
 This repository contains the standalone realtime WebGL landing experience. The main information-rich portfolio remains in the original `lavine-site` repository.
 
 ## Run locally
@@ -25,8 +27,9 @@ Open `http://localhost:3000`.
 
 ## Deployment
 
+- Live site: https://lavinesite-astronaut-lavine.vercel.app
 - GitHub: `lavine888/lavinesite-astronaut`
-- Vercel project: `lavine/lavinesite-astronaut`
+- Vercel project: https://vercel.com/lavine/lavinesite-astronaut
 - Production branch: `main`
 
 ## Links
