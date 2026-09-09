@@ -44,6 +44,46 @@ const RGB_SHIFT_SHADER = {
   `,
 };
 
+const PORTAL_SHADER = {
+  uniforms: {
+    time: { value: 0 },
+    intensity: { value: 0 },
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform float time;
+    uniform float intensity;
+    varying vec2 vUv;
+
+    float ring(float r, float center, float width) {
+      return smoothstep(width, 0.0, abs(r - center));
+    }
+
+    void main() {
+      vec2 p = vUv - 0.5;
+      p.x *= 1.02;
+      float r = length(p);
+      float a = atan(p.y, p.x);
+      float swirl = sin(a * 9.0 - time * 1.55 + r * 26.0) * 0.5 + 0.5;
+      float bands = ring(r, 0.31 + sin(time * 0.42) * 0.012, 0.055)
+                  + ring(r, 0.20 + cos(time * 0.5) * 0.01, 0.035) * 0.55;
+      float core = smoothstep(0.46, 0.03, r) * (0.18 + swirl * 0.42);
+      float spokes = pow(max(0.0, sin(a * 14.0 + time * 0.8)), 8.0) * smoothstep(0.46, 0.1, r);
+      float alpha = (bands * 0.78 + core * 0.52 + spokes * 0.18) * intensity;
+      vec3 cold = vec3(0.49, 0.72, 0.70);
+      vec3 warm = vec3(0.69, 0.53, 0.34);
+      vec3 color = mix(cold, warm, clamp(swirl * 0.35 + bands * 0.25, 0.0, 1.0));
+      gl_FragColor = vec4(color * (0.55 + bands * 1.8 + spokes), alpha);
+    }
+  `,
+};
+
 function makeLabelTexture(title: string, detail: string) {
   const canvas = document.createElement("canvas");
   canvas.width = 1024;
@@ -83,6 +123,24 @@ function makeLabelPlane(title: string, detail: string, width = 5.8, height = 1.4
   return mesh;
 }
 
+function makeGlowTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return new THREE.CanvasTexture(canvas);
+  const gradient = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+  gradient.addColorStop(0, "rgba(240,248,235,.95)");
+  gradient.addColorStop(0.14, "rgba(183,219,207,.52)");
+  gradient.addColorStop(0.42, "rgba(116,167,157,.16)");
+  gradient.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 256, 256);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
 export default function SceneCanvas() {
   const mountRef = useRef<HTMLDivElement>(null);
 
@@ -108,51 +166,148 @@ export default function SceneCanvas() {
     }
 
     renderer.setClearColor(0x010203, 1);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1 : 1.4));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1 : 1.35));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.9;
+    renderer.toneMappingExposure = 0.94;
     renderer.domElement.setAttribute("aria-hidden", "true");
     mount.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x010203);
-    scene.fog = new THREE.FogExp2(0x020405, 0.027);
+    scene.fog = new THREE.FogExp2(0x020405, 0.0255);
 
-    const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 130);
+    const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 140);
     camera.position.set(0, 0, 12);
     scene.add(camera);
 
-    const ambient = new THREE.HemisphereLight(0xc5d4cf, 0x030506, 0.88);
+    const ambient = new THREE.HemisphereLight(0xc5d4cf, 0x030506, 0.84);
     scene.add(ambient);
 
-    const key = new THREE.DirectionalLight(0xeaf1e8, 2.4);
+    const key = new THREE.DirectionalLight(0xeaf1e8, 2.7);
     key.position.set(5, 7, 7);
     scene.add(key);
 
-    const coldRim = new THREE.PointLight(0x8eaaa7, 16, 30, 2.1);
+    const coldRim = new THREE.PointLight(0x8eaaa7, 18, 34, 2.1);
     coldRim.position.set(-4, 1, -8);
     scene.add(coldRim);
 
-    const goldRim = new THREE.PointLight(0x92744c, 7, 22, 2.2);
+    const goldRim = new THREE.PointLight(0x92744c, 8.5, 26, 2.2);
     goldRim.position.set(4, -1.5, -27);
     scene.add(goldRim);
 
     const world = new THREE.Group();
     scene.add(world);
 
-    // --- 01 / THE HATCH ------------------------------------------------------
+    const glowTexture = makeGlowTexture();
+    const glowMaterial = new THREE.SpriteMaterial({
+      map: glowTexture,
+      transparent: true,
+      opacity: 0.22,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+
+    // --- 00 / DEEP FIELD ----------------------------------------------------
+    const farStarCount = isMobile ? 620 : 1450;
+    const farPositions = new Float32Array(farStarCount * 3);
+    for (let i = 0; i < farStarCount; i += 1) {
+      const spread = 8 + Math.random() * 18;
+      farPositions[i * 3] = (Math.random() - 0.5) * spread;
+      farPositions[i * 3 + 1] = (Math.random() - 0.5) * spread * 0.72;
+      farPositions[i * 3 + 2] = 16 - Math.random() * 78;
+    }
+    const farGeometry = new THREE.BufferGeometry();
+    farGeometry.setAttribute("position", new THREE.BufferAttribute(farPositions, 3));
+    const farMaterial = new THREE.PointsMaterial({
+      color: 0x90aaa3,
+      size: isMobile ? 0.014 : 0.019,
+      transparent: true,
+      opacity: 0.34,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+    const farStars = new THREE.Points(farGeometry, farMaterial);
+    world.add(farStars);
+
+    // Near particles create foreground parallax and give the frame some "air".
+    const nearCount = isMobile ? 180 : 420;
+    const nearPositions = new Float32Array(nearCount * 3);
+    for (let i = 0; i < nearCount; i += 1) {
+      nearPositions[i * 3] = (Math.random() - 0.5) * 13;
+      nearPositions[i * 3 + 1] = (Math.random() - 0.5) * 8;
+      nearPositions[i * 3 + 2] = 11 - Math.random() * 66;
+    }
+    const nearGeometry = new THREE.BufferGeometry();
+    nearGeometry.setAttribute("position", new THREE.BufferAttribute(nearPositions, 3));
+    const nearMaterial = new THREE.PointsMaterial({
+      color: 0xdce9df,
+      size: isMobile ? 0.028 : 0.045,
+      transparent: true,
+      opacity: 0.22,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+    const nearDust = new THREE.Points(nearGeometry, nearMaterial);
+    world.add(nearDust);
+
+    // One draw call of speed streaks becomes visible only during transitions.
+    const streakCount = isMobile ? 42 : 90;
+    const streakPositions = new Float32Array(streakCount * 6);
+    for (let i = 0; i < streakCount; i += 1) {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 1.3 + Math.random() * 5.5;
+      const x = Math.cos(angle) * radius;
+      const y = Math.sin(angle) * radius;
+      const z = 7 - Math.random() * 56;
+      const o = i * 6;
+      streakPositions[o] = x;
+      streakPositions[o + 1] = y;
+      streakPositions[o + 2] = z;
+      streakPositions[o + 3] = x * 1.02;
+      streakPositions[o + 4] = y * 1.02;
+      streakPositions[o + 5] = z - (0.8 + Math.random() * 2.8);
+    }
+    const streakGeometry = new THREE.BufferGeometry();
+    streakGeometry.setAttribute("position", new THREE.BufferAttribute(streakPositions, 3));
+    const streakMaterial = new THREE.LineBasicMaterial({
+      color: 0xdceae2,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    const streaks = new THREE.LineSegments(streakGeometry, streakMaterial);
+    world.add(streaks);
+
+    // --- 01 / THE HATCH -----------------------------------------------------
     const hatch = new THREE.Group();
     hatch.position.z = 3.2;
     world.add(hatch);
 
     const outerRingMaterial = new THREE.MeshStandardMaterial({
       color: 0x56615f,
-      roughness: 0.34,
-      metalness: 0.88,
+      roughness: 0.31,
+      metalness: 0.9,
     });
     const outerRing = new THREE.Mesh(new THREE.TorusGeometry(4.45, 0.18, 12, 120), outerRingMaterial);
     hatch.add(outerRing);
+
+    const ringLayers: THREE.Mesh[] = [];
+    [4.72, 4.16, 3.82].forEach((radius, index) => {
+      const layer = new THREE.Mesh(
+        new THREE.TorusGeometry(radius, index === 0 ? 0.045 : 0.024, 8, 120),
+        new THREE.MeshBasicMaterial({
+          color: index === 2 ? 0xb5966d : 0xb8c6c1,
+          transparent: true,
+          opacity: index === 2 ? 0.14 : 0.18,
+          depthWrite: false,
+        }),
+      );
+      layer.rotation.z = index * 0.18;
+      hatch.add(layer);
+      ringLayers.push(layer);
+    });
 
     const innerGlowMaterial = new THREE.MeshBasicMaterial({
       color: 0xdde8df,
@@ -163,17 +318,41 @@ export default function SceneCanvas() {
     const innerGlow = new THREE.Mesh(new THREE.TorusGeometry(3.65, 0.045, 8, 120), innerGlowMaterial);
     hatch.add(innerGlow);
 
-    const hatchTicks = new THREE.Group();
+    const hatchFlare = new THREE.Sprite(glowMaterial.clone());
+    hatchFlare.scale.set(7.8, 7.8, 1);
+    hatchFlare.position.z = -0.28;
+    (hatchFlare.material as THREE.SpriteMaterial).opacity = 0.06;
+    hatch.add(hatchFlare);
+
     const tickGeometry = new THREE.BoxGeometry(0.07, 0.48, 0.08);
     const tickMaterial = new THREE.MeshBasicMaterial({ color: 0xb9c5c0, transparent: true, opacity: 0.28 });
-    for (let i = 0; i < 24; i += 1) {
-      const tick = new THREE.Mesh(tickGeometry, tickMaterial);
-      const a = (i / 24) * Math.PI * 2;
-      tick.position.set(Math.cos(a) * 4.05, Math.sin(a) * 4.05, 0.03);
-      tick.rotation.z = a;
-      hatchTicks.add(tick);
+    const tickCount = 32;
+    const hatchTicks = new THREE.InstancedMesh(tickGeometry, tickMaterial, tickCount);
+    const tickDummy = new THREE.Object3D();
+    for (let i = 0; i < tickCount; i += 1) {
+      const a = (i / tickCount) * Math.PI * 2;
+      tickDummy.position.set(Math.cos(a) * 4.05, Math.sin(a) * 4.05, 0.03);
+      tickDummy.rotation.set(0, 0, a);
+      tickDummy.updateMatrix();
+      hatchTicks.setMatrixAt(i, tickDummy.matrix);
     }
+    hatchTicks.instanceMatrix.needsUpdate = true;
     hatch.add(hatchTicks);
+
+    const spokeGeometry = new THREE.BoxGeometry(0.035, 1.1, 0.04);
+    const spokeMaterial = new THREE.MeshBasicMaterial({ color: 0x7c8d89, transparent: true, opacity: 0.12 });
+    const spokeCount = 16;
+    const spokes = new THREE.InstancedMesh(spokeGeometry, spokeMaterial, spokeCount);
+    const spokeDummy = new THREE.Object3D();
+    for (let i = 0; i < spokeCount; i += 1) {
+      const a = (i / spokeCount) * Math.PI * 2;
+      spokeDummy.position.set(Math.cos(a) * 4.94, Math.sin(a) * 4.94, -0.08);
+      spokeDummy.rotation.set(0, 0, a);
+      spokeDummy.updateMatrix();
+      spokes.setMatrixAt(i, spokeDummy.matrix);
+    }
+    spokes.instanceMatrix.needsUpdate = true;
+    hatch.add(spokes);
 
     const bladeShape = new THREE.Shape();
     bladeShape.moveTo(0.18, -0.92);
@@ -190,14 +369,14 @@ export default function SceneCanvas() {
 
     const bladeMaterial = new THREE.MeshStandardMaterial({
       color: 0x222a2a,
-      roughness: 0.36,
-      metalness: 0.88,
+      roughness: 0.34,
+      metalness: 0.9,
       side: THREE.DoubleSide,
     });
     const bladeEdgeMaterial = new THREE.LineBasicMaterial({
-      color: 0xaebbb7,
+      color: 0xb7c5c0,
       transparent: true,
-      opacity: 0.22,
+      opacity: 0.24,
     });
     const bladeEdges = new THREE.EdgesGeometry(bladeGeometry, 18);
     const blades: Array<{ group: THREE.Group; angle: number }> = [];
@@ -222,23 +401,23 @@ export default function SceneCanvas() {
       side: THREE.DoubleSide,
     });
     const hatchBeam = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.55, 3.6, 13, 32, 1, true),
+      new THREE.CylinderGeometry(0.55, 3.8, 14, 32, 1, true),
       hatchBeamMaterial,
     );
     hatchBeam.rotation.x = Math.PI / 2;
-    hatchBeam.position.z = -6.2;
+    hatchBeam.position.z = -6.5;
     hatch.add(hatchBeam);
 
-    // --- 02 / ARCHIVE HALL ---------------------------------------------------
+    // --- 02 / ARCHIVE HALL --------------------------------------------------
     const hall = new THREE.Group();
     world.add(hall);
 
-    const floorGrid = new THREE.GridHelper(70, 56, 0x6f817d, 0x26302f);
+    const floorGrid = new THREE.GridHelper(74, 58, 0x6f817d, 0x26302f);
     floorGrid.position.set(0, -3.1, -25);
     const floorMaterials = Array.isArray(floorGrid.material) ? floorGrid.material : [floorGrid.material];
     floorMaterials.forEach((material) => {
       material.transparent = true;
-      material.opacity = 0.2;
+      material.opacity = 0.18;
       material.depthWrite = false;
     });
     hall.add(floorGrid);
@@ -246,31 +425,68 @@ export default function SceneCanvas() {
     const frameMaterial = new THREE.LineBasicMaterial({
       color: 0x8fa19c,
       transparent: true,
-      opacity: 0.15,
+      opacity: 0.14,
     });
-    const frameGeometry = new THREE.EdgesGeometry(new THREE.BoxGeometry(10.5, 6.5, 0.08));
-    for (let i = 0; i < 11; i += 1) {
+    const frameGeometry = new THREE.EdgesGeometry(new THREE.BoxGeometry(10.8, 6.8, 0.08));
+    for (let i = 0; i < 12; i += 1) {
       const frame = new THREE.LineSegments(frameGeometry, frameMaterial);
-      frame.position.set(Math.sin(i * 0.62) * 0.7, Math.cos(i * 0.47) * 0.22, -7 - i * 3.7);
-      frame.rotation.z = Math.sin(i * 0.7) * 0.025;
+      frame.position.set(Math.sin(i * 0.62) * 0.72, Math.cos(i * 0.47) * 0.22, -6.8 - i * 3.55);
+      frame.rotation.z = Math.sin(i * 0.7) * 0.026;
       hall.add(frame);
     }
 
+    // Tall side architecture creates foreground wipes when the camera moves laterally.
+    const monolithMaterial = new THREE.MeshStandardMaterial({
+      color: 0x18211f,
+      roughness: 0.7,
+      metalness: 0.45,
+      transparent: true,
+      opacity: 0.72,
+    });
+    const monolithGeometry = new THREE.BoxGeometry(0.72, 7.4, 1.35);
+    const monoliths: THREE.Mesh[] = [];
+    for (let i = 0; i < 10; i += 1) {
+      [-1, 1].forEach((side) => {
+        const monolith = new THREE.Mesh(monolithGeometry, monolithMaterial.clone());
+        monolith.position.set(side * (5.2 + (i % 2) * 0.55), -0.05 + Math.sin(i) * 0.35, -9.5 - i * 3.6);
+        monolith.rotation.y = side * (0.08 + (i % 3) * 0.035);
+        hall.add(monolith);
+        monoliths.push(monolith);
+      });
+    }
+
+    const arcMaterial = new THREE.MeshBasicMaterial({
+      color: 0xa3b5af,
+      transparent: true,
+      opacity: 0.12,
+      depthWrite: false,
+    });
+    const dataArcs: THREE.Mesh[] = [];
+    for (let i = 0; i < 7; i += 1) {
+      const arc = new THREE.Mesh(
+        new THREE.TorusGeometry(3.8 + (i % 3) * 0.5, 0.025, 6, 64, Math.PI * (0.72 + (i % 2) * 0.18)),
+        arcMaterial.clone(),
+      );
+      arc.position.set(i % 2 === 0 ? 2.1 : -2.3, i % 3 === 0 ? 0.8 : -0.4, -11.5 - i * 4.5);
+      arc.rotation.set(Math.PI / 2 + 0.2, i * 0.17, i * 0.36);
+      hall.add(arc);
+      dataArcs.push(arc);
+    }
+
     const identityLabels = [
-      { title: "BUILD", detail: "turn ambiguity into a working system", position: [2.4, 0.85, -12.5] },
-      { title: "MEASURE", detail: "replace confidence with evidence", position: [-2.15, -0.25, -17.2] },
-      { title: "SHIP", detail: "keep the loop moving in reality", position: [2.05, 0.15, -21.7] },
-    ] as const;
+      { title: "BUILD", detail: "turn ambiguity into a working system", position: [2.4, 0.85, -12.5] as const },
+      { title: "MEASURE", detail: "replace confidence with evidence", position: [-2.15, -0.25, -17.2] as const },
+      { title: "SHIP", detail: "keep the loop moving in reality", position: [2.05, 0.15, -21.7] as const },
+    ];
     const labelPlanes: THREE.Mesh[] = [];
     identityLabels.forEach((item, index) => {
       const label = makeLabelPlane(item.title, item.detail, 5.7, 1.42);
-      label.position.set(...item.position);
+      label.position.set(item.position[0], item.position[1], item.position[2]);
       label.rotation.y = index % 2 === 0 ? -0.24 : 0.24;
       hall.add(label);
       labelPlanes.push(label);
     });
 
-    // Low-cost volumetric atmosphere: translucent light cones, not postprocessed fog volumes.
     const beamMaterial = new THREE.MeshBasicMaterial({
       color: 0x8da9a4,
       transparent: true,
@@ -281,11 +497,13 @@ export default function SceneCanvas() {
     });
     const beamGeometry = new THREE.ConeGeometry(3.2, 15, 24, 1, true);
     const hallBeams: THREE.Mesh[] = [];
-    [
+    const beamSpecs: Array<[number, number, number, number]> = [
       [-4.2, 3.8, -13, 0.34],
       [4.5, 4.1, -24, -0.35],
       [-3.4, 3.6, -35, 0.25],
-    ].forEach(([x, y, z, rz]) => {
+      [3.2, 4.4, -42, -0.2],
+    ];
+    beamSpecs.forEach(([x, y, z, rz]) => {
       const beam = new THREE.Mesh(beamGeometry, beamMaterial.clone());
       beam.position.set(x, y, z);
       beam.rotation.z = rz;
@@ -294,11 +512,12 @@ export default function SceneCanvas() {
       hallBeams.push(beam);
     });
 
-    // --- 03 / ARTIFACTS ------------------------------------------------------
+    // --- 03 / ARTIFACTS -----------------------------------------------------
     const artifactGroup = new THREE.Group();
     world.add(artifactGroup);
     const artifactZ = [-25.5, -29.8, -34.1, -38.2];
     const artifactObjects: THREE.Group[] = [];
+    const artifactLights: THREE.PointLight[] = [];
     const artifactGeometries: THREE.BufferGeometry[] = [
       new THREE.IcosahedronGeometry(1.12, 2),
       new THREE.TorusKnotGeometry(0.78, 0.22, 84, 10, 2, 3),
@@ -310,19 +529,19 @@ export default function SceneCanvas() {
       const g = new THREE.Group();
       const coreMaterial = new THREE.MeshPhysicalMaterial({
         color: index === 2 ? 0x8e7655 : 0x849894,
-        roughness: 0.2,
-        metalness: 0.76,
-        clearcoat: 0.7,
-        clearcoatRoughness: 0.18,
+        roughness: 0.18,
+        metalness: 0.78,
+        clearcoat: 0.82,
+        clearcoatRoughness: 0.16,
         transparent: true,
-        opacity: 0.68,
+        opacity: 0.7,
       });
       const core = new THREE.Mesh(artifactGeometries[index], coreMaterial);
       g.add(core);
 
       const wire = new THREE.LineSegments(
         new THREE.EdgesGeometry(artifactGeometries[index], 18),
-        new THREE.LineBasicMaterial({ color: 0xe3ebe4, transparent: true, opacity: 0.38 }),
+        new THREE.LineBasicMaterial({ color: 0xe3ebe4, transparent: true, opacity: 0.4 }),
       );
       wire.scale.setScalar(1.04);
       g.add(wire);
@@ -339,11 +558,59 @@ export default function SceneCanvas() {
       haloB.scale.setScalar(0.77);
       g.add(haloB);
 
+      const pedestal = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.5, 1.72, 0.16, 48),
+        new THREE.MeshStandardMaterial({
+          color: 0x28302e,
+          roughness: 0.55,
+          metalness: 0.62,
+          transparent: true,
+          opacity: 0.68,
+        }),
+      );
+      pedestal.position.y = -2.04;
+      g.add(pedestal);
+
+      const column = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.5, 1.25, 4.2, 32, 1, true),
+        new THREE.MeshBasicMaterial({
+          color: index === 2 ? 0x9d7e58 : 0x779d94,
+          transparent: true,
+          opacity: 0.026,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          side: THREE.DoubleSide,
+        }),
+      );
+      column.position.y = -0.8;
+      g.add(column);
+
       const label = makeLabelPlane(`A-0${index + 1}`, ["HUMAN AI", "AI COLLAB", "SIGNALS", "AI NETWORK"][index], 2.7, 0.66);
-      label.position.set(0, -2.15, 0.2);
+      label.position.set(0, -2.45, 0.2);
       label.material = (label.material as THREE.MeshBasicMaterial).clone();
       (label.material as THREE.MeshBasicMaterial).opacity = 0.45;
       g.add(label);
+
+      const flare = new THREE.Sprite(glowMaterial.clone());
+      flare.position.set(0, 0, -0.6);
+      flare.scale.set(3.4, 3.4, 1);
+      (flare.material as THREE.SpriteMaterial).opacity = 0.08;
+      g.add(flare);
+
+      const light = new THREE.PointLight(index === 2 ? 0xb08b5d : 0x85b3aa, 1.2, 8.5, 2.1);
+      light.position.set(0, 0.4, 0.6);
+      g.add(light);
+      artifactLights.push(light);
+
+      for (let satelliteIndex = 0; satelliteIndex < 3; satelliteIndex += 1) {
+        const satellite = new THREE.Mesh(
+          new THREE.SphereGeometry(0.055 + satelliteIndex * 0.01, 10, 10),
+          new THREE.MeshBasicMaterial({ color: 0xdde8e2, transparent: true, opacity: 0.58 }),
+        );
+        satellite.userData.phase = satelliteIndex * 2.1 + index * 0.4;
+        satellite.userData.radius = 2.0 + satelliteIndex * 0.22;
+        g.add(satellite);
+      }
 
       g.position.set(index % 2 === 0 ? 2.45 : -2.35, index % 3 === 0 ? 0.55 : -0.25, z);
       g.rotation.z = index % 2 === 0 ? 0.08 : -0.08;
@@ -351,8 +618,8 @@ export default function SceneCanvas() {
       artifactObjects.push(g);
     });
 
-    // --- 04 / PARTICLES + GATEWAY -------------------------------------------
-    const starCount = isMobile ? 560 : 1250;
+    // --- 04 / PARTICLES + GATEWAY ------------------------------------------
+    const starCount = isMobile ? 620 : 1420;
     const originalPositions = new Float32Array(starCount * 3);
     const portalTargets = new Float32Array(starCount * 3);
     const workingPositions = new Float32Array(starCount * 3);
@@ -381,9 +648,9 @@ export default function SceneCanvas() {
     starGeometry.setAttribute("position", starAttribute);
     const starMaterial = new THREE.PointsMaterial({
       color: 0xd9e7df,
-      size: isMobile ? 0.018 : 0.026,
+      size: isMobile ? 0.019 : 0.028,
       transparent: true,
-      opacity: 0.44,
+      opacity: 0.46,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
     });
@@ -392,13 +659,13 @@ export default function SceneCanvas() {
 
     const gateway = new THREE.Group();
     const gatewayRings: THREE.Mesh[] = [];
-    [3.35, 2.95, 2.55].forEach((radius, index) => {
+    [3.55, 3.18, 2.9, 2.62].forEach((radius, index) => {
       const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(radius, index === 0 ? 0.075 : 0.035, 8, 128),
+        new THREE.TorusGeometry(radius, index === 0 ? 0.075 : 0.03, 8, 128),
         new THREE.MeshBasicMaterial({
-          color: index === 1 ? 0xb49368 : 0xe4eee6,
+          color: index === 2 ? 0xb49368 : 0xe4eee6,
           transparent: true,
-          opacity: index === 0 ? 0.5 : 0.22,
+          opacity: index === 0 ? 0.46 : 0.2,
           depthWrite: false,
         }),
       );
@@ -406,46 +673,73 @@ export default function SceneCanvas() {
       gateway.add(ring);
       gatewayRings.push(ring);
     });
-    const gatewayDisc = new THREE.Mesh(
-      new THREE.CircleGeometry(2.42, 96),
-      new THREE.MeshBasicMaterial({
-        color: 0x78938d,
-        transparent: true,
-        opacity: 0.035,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-      }),
-    );
-    gateway.add(gatewayDisc);
+
+    const portalMaterial = new THREE.ShaderMaterial({
+      uniforms: THREE.UniformsUtils.clone(PORTAL_SHADER.uniforms),
+      vertexShader: PORTAL_SHADER.vertexShader,
+      fragmentShader: PORTAL_SHADER.fragmentShader,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+    });
+    const portalDisc = new THREE.Mesh(new THREE.CircleGeometry(2.58, 96), portalMaterial);
+    portalDisc.position.z = 0.02;
+    gateway.add(portalDisc);
+
+    const gatewayFlare = new THREE.Sprite(glowMaterial.clone());
+    gatewayFlare.scale.set(8.8, 8.8, 1);
+    gatewayFlare.position.z = -0.1;
+    (gatewayFlare.material as THREE.SpriteMaterial).opacity = 0;
+    gateway.add(gatewayFlare);
+
+    const gatewayShardGeometry = new THREE.BoxGeometry(0.08, 0.52, 0.08);
+    const gatewayShardMaterial = new THREE.MeshBasicMaterial({
+      color: 0xdfeae4,
+      transparent: true,
+      opacity: 0.42,
+    });
+    const gatewayShards = new THREE.InstancedMesh(gatewayShardGeometry, gatewayShardMaterial, 24);
+    const shardDummy = new THREE.Object3D();
+    for (let i = 0; i < 24; i += 1) {
+      const angle = (i / 24) * Math.PI * 2;
+      const radius = 3.9 + (i % 3) * 0.25;
+      shardDummy.position.set(Math.cos(angle) * radius, Math.sin(angle) * radius, 0);
+      shardDummy.rotation.set(0, 0, angle);
+      shardDummy.updateMatrix();
+      gatewayShards.setMatrixAt(i, shardDummy.matrix);
+    }
+    gatewayShards.instanceMatrix.needsUpdate = true;
+    gateway.add(gatewayShards);
+
     gateway.position.z = -48;
     world.add(gateway);
 
-    // Camera is one continuous shot, but its path deliberately changes direction.
     const cameraPath = new THREE.CatmullRomCurve3(
       [
         new THREE.Vector3(0, 0, 12),
         new THREE.Vector3(0.05, 0.05, 7.1),
         new THREE.Vector3(0.12, 0.08, 3.65),
-        new THREE.Vector3(0.35, 0.18, -4.5),
-        new THREE.Vector3(1.35, 0.65, -12.2),
-        new THREE.Vector3(-1.65, 0.15, -20.5),
-        new THREE.Vector3(2.05, -0.3, -29.8),
-        new THREE.Vector3(-1.5, 0.48, -38.5),
-        new THREE.Vector3(0, 0, -47.2),
+        new THREE.Vector3(0.42, 0.2, -4.8),
+        new THREE.Vector3(1.65, 0.72, -12.3),
+        new THREE.Vector3(-1.9, 0.12, -20.2),
+        new THREE.Vector3(2.45, -0.35, -29.6),
+        new THREE.Vector3(-1.8, 0.58, -38.2),
+        new THREE.Vector3(0.15, 0.1, -46.2),
+        new THREE.Vector3(0, 0, -47.25),
       ],
       false,
       "catmullrom",
-      0.45,
+      0.43,
     );
 
-    // Desktop-only lightweight post stack. Mobile stays on the direct renderer.
     let composer: EffectComposer | null = null;
     let bloomPass: UnrealBloomPass | null = null;
     let rgbPass: ShaderPass | null = null;
     if (!isMobile && !reducedMotion) {
       composer = new EffectComposer(renderer);
       composer.addPass(new RenderPass(scene, camera));
-      bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.25, 0.55, 0.72);
+      bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.28, 0.58, 0.7);
       composer.addPass(bloomPass);
       rgbPass = new ShaderPass(RGB_SHIFT_SHADER);
       composer.addPass(rgbPass);
@@ -495,25 +789,34 @@ export default function SceneCanvas() {
 
       const hatchOpen = smoothstep(0.08, 0.225, progress);
       const hatchCross = pulse(progress, 0.235, 0.075);
+      const logicPhase = smoothstep(0.28, 0.52, progress);
       const artifactPhase = smoothstep(0.47, 0.72, progress);
       const portalMorph = smoothstep(0.79, 0.975, progress);
       const portalPulse = pulse(progress, 0.91, 0.12);
 
-      const pathProgress = clamp(progress + hatchCross * 0.018, 0, 1);
+      const pathProgress = clamp(progress + hatchCross * 0.019, 0, 1);
       cameraPath.getPointAt(pathProgress, cameraPoint);
       cameraPath.getPointAt(Math.min(1, pathProgress + 0.035), lookPoint);
       camera.position.copy(cameraPoint);
-      camera.position.x += mouseX * 0.2 * (1 - portalMorph * 0.8);
-      camera.position.y -= mouseY * 0.15 * (1 - portalMorph * 0.8);
-      camera.lookAt(lookPoint.x, lookPoint.y, lookPoint.z - 1.2);
-      camera.rotation.z += Math.sin(progress * Math.PI * 4.2) * 0.009 + hatchCross * 0.012;
-      const targetFov = 48 + hatchCross * 12 + portalPulse * 4;
+      camera.position.x += mouseX * 0.22 * (1 - portalMorph * 0.82);
+      camera.position.y -= mouseY * 0.16 * (1 - portalMorph * 0.82);
+      camera.lookAt(lookPoint.x, lookPoint.y, lookPoint.z - 1.25);
+      camera.rotation.z += Math.sin(progress * Math.PI * 4.4) * 0.01 + hatchCross * 0.014;
+      const targetFov = 48 + hatchCross * 13 + portalPulse * 5.5;
       if (Math.abs(camera.fov - targetFov) > 0.02) {
         camera.fov += (targetFov - camera.fov) * Math.min(1, dt * 7);
         camera.updateProjectionMatrix();
       }
 
       const time = performance.now() * 0.001;
+      farStars.rotation.z = time * 0.0025;
+      nearDust.rotation.z = -time * 0.0055;
+      nearDust.position.x = mouseX * -0.14;
+      nearDust.position.y = mouseY * 0.1;
+      nearMaterial.opacity = 0.16 + logicPhase * 0.08 + portalMorph * 0.08;
+      streakMaterial.opacity = hatchCross * 0.42 + portalPulse * 0.28;
+      streaks.position.z = hatchCross * -1.8 + portalPulse * -1.1;
+
       blades.forEach(({ group, angle }, index) => {
         group.rotation.z = angle + hatchOpen * (0.43 + (index % 2) * 0.025);
         const radial = hatchOpen * 2.55;
@@ -521,19 +824,34 @@ export default function SceneCanvas() {
         group.position.y = Math.sin(angle + 0.2) * radial;
       });
       outerRing.rotation.z = time * 0.025;
-      hatchTicks.rotation.z = -time * 0.035;
-      innerGlowMaterial.opacity = 0.08 + hatchOpen * 0.36 + hatchCross * 0.18;
-      hatchBeamMaterial.opacity = hatchOpen * 0.045 + hatchCross * 0.085;
-      hatchBeam.scale.setScalar(0.92 + hatchCross * 0.2);
+      hatchTicks.rotation.z = -time * 0.036;
+      spokes.rotation.z = time * 0.018;
+      ringLayers.forEach((ring, index) => {
+        ring.rotation.z += (index % 2 === 0 ? 1 : -1) * dt * (0.016 + index * 0.009);
+        const material = ring.material as THREE.MeshBasicMaterial;
+        material.opacity = 0.1 + hatchOpen * 0.1 + hatchCross * 0.12 + index * 0.018;
+      });
+      innerGlowMaterial.opacity = 0.08 + hatchOpen * 0.36 + hatchCross * 0.2;
+      hatchBeamMaterial.opacity = hatchOpen * 0.045 + hatchCross * 0.1;
+      hatchBeam.scale.setScalar(0.92 + hatchCross * 0.24);
+      (hatchFlare.material as THREE.SpriteMaterial).opacity = 0.04 + hatchOpen * 0.08 + hatchCross * 0.32;
+      hatchFlare.scale.setScalar(7.6 + hatchCross * 2.4);
 
       labelPlanes.forEach((label, index) => {
         label.rotation.y += Math.sin(time * 0.3 + index) * dt * 0.004;
         const material = label.material as THREE.MeshBasicMaterial;
-        material.opacity = 0.35 + Math.max(0, 1 - Math.abs(camera.position.z - label.position.z) / 9) * 0.5;
+        material.opacity = 0.28 + Math.max(0, 1 - Math.abs(camera.position.z - label.position.z) / 9) * 0.58;
       });
       hallBeams.forEach((beam, index) => {
         const material = beam.material as THREE.MeshBasicMaterial;
-        material.opacity = 0.018 + Math.sin(time * 0.34 + index) * 0.006 + artifactPhase * 0.012;
+        material.opacity = 0.016 + Math.sin(time * 0.34 + index) * 0.006 + artifactPhase * 0.018;
+      });
+      dataArcs.forEach((arc, index) => {
+        arc.rotation.z += (index % 2 === 0 ? 1 : -1) * dt * 0.018;
+        (arc.material as THREE.MeshBasicMaterial).opacity = 0.07 + logicPhase * 0.08 + Math.sin(time * 0.32 + index) * 0.02;
+      });
+      monoliths.forEach((monolith, index) => {
+        monolith.position.y += Math.sin(time * 0.16 + index) * dt * 0.004;
       });
 
       artifactObjects.forEach((obj, index) => {
@@ -541,9 +859,17 @@ export default function SceneCanvas() {
         obj.rotation.y = time * (0.12 + index * 0.018) - index * 0.34;
         const distance = Math.abs(camera.position.z - artifactZ[index]);
         const focus = Math.max(0, 1 - distance / 8.5);
-        const scale = 0.78 + focus * 0.43;
+        const scale = 0.78 + focus * 0.45;
         obj.scale.setScalar(scale);
         obj.position.x += Math.sin(time * 0.25 + index) * dt * 0.012;
+        artifactLights[index].intensity = 0.35 + focus * 5.4;
+        obj.children.forEach((child) => {
+          if (child.userData.radius) {
+            const phase = Number(child.userData.phase) + time * (0.42 + index * 0.06);
+            const radius = Number(child.userData.radius);
+            child.position.set(Math.cos(phase) * radius, Math.sin(phase * 1.13) * radius * 0.62, Math.sin(phase) * 0.42);
+          }
+        });
       });
 
       if (portalMorph > 0.001) {
@@ -552,24 +878,29 @@ export default function SceneCanvas() {
         }
         starAttribute.needsUpdate = true;
       }
-      stars.rotation.z = time * (0.006 + portalMorph * 0.08);
-      starMaterial.size = (isMobile ? 0.018 : 0.026) + portalMorph * 0.012;
-      starMaterial.opacity = 0.4 + portalMorph * 0.28;
+      stars.rotation.z = time * (0.006 + portalMorph * 0.09);
+      starMaterial.size = (isMobile ? 0.019 : 0.028) + portalMorph * 0.014;
+      starMaterial.opacity = 0.42 + portalMorph * 0.32;
 
-      gateway.rotation.z = time * (0.025 + portalMorph * 0.08);
-      gateway.scale.setScalar(0.92 + portalMorph * 0.12 + portalPulse * 0.035);
+      gateway.rotation.z = time * (0.025 + portalMorph * 0.09);
+      gateway.scale.setScalar(0.9 + portalMorph * 0.14 + portalPulse * 0.055);
       gatewayRings.forEach((ring, index) => {
-        ring.rotation.z += (index % 2 === 0 ? 1 : -1) * dt * (0.018 + portalMorph * 0.06);
+        ring.rotation.z += (index % 2 === 0 ? 1 : -1) * dt * (0.018 + portalMorph * 0.075);
         const material = ring.material as THREE.MeshBasicMaterial;
-        material.opacity = 0.16 + portalMorph * (index === 0 ? 0.65 : 0.34) + portalPulse * 0.12;
+        material.opacity = 0.12 + portalMorph * (index === 0 ? 0.72 : 0.38) + portalPulse * 0.16;
       });
-      (gatewayDisc.material as THREE.MeshBasicMaterial).opacity = 0.02 + portalMorph * 0.1 + portalPulse * 0.04;
+      portalMaterial.uniforms.time.value = time;
+      portalMaterial.uniforms.intensity.value = portalMorph * (0.6 + portalPulse * 0.85);
+      (gatewayFlare.material as THREE.SpriteMaterial).opacity = portalMorph * 0.12 + portalPulse * 0.32;
+      gatewayFlare.scale.setScalar(8.5 + portalPulse * 3.2);
+      gatewayShards.rotation.z = -time * (0.04 + portalMorph * 0.12);
+      gatewayShardMaterial.opacity = 0.14 + portalMorph * 0.42;
 
       if (bloomPass && rgbPass && composer) {
-        bloomPass.strength = 0.18 + hatchCross * 0.95 + portalPulse * 0.65;
-        bloomPass.radius = 0.38 + hatchCross * 0.2;
-        bloomPass.threshold = 0.68 - hatchCross * 0.18 - portalPulse * 0.1;
-        rgbPass.uniforms.amount.value = 0.0003 + hatchCross * 0.005 + portalPulse * 0.0024;
+        bloomPass.strength = 0.2 + hatchCross * 1.0 + artifactPhase * 0.08 + portalPulse * 0.78;
+        bloomPass.radius = 0.4 + hatchCross * 0.2 + portalPulse * 0.08;
+        bloomPass.threshold = 0.66 - hatchCross * 0.19 - portalPulse * 0.12;
+        rgbPass.uniforms.amount.value = 0.00035 + hatchCross * 0.0055 + portalPulse * 0.003;
         rgbPass.uniforms.angle.value = time * 0.35;
         composer.render();
       } else {
@@ -607,8 +938,14 @@ export default function SceneCanvas() {
 
       const disposeObject = (object: THREE.Object3D) => {
         object.traverse((child) => {
-          if (child instanceof THREE.Mesh || child instanceof THREE.LineSegments || child instanceof THREE.Points) {
-            child.geometry?.dispose();
+          if (
+            child instanceof THREE.Mesh ||
+            child instanceof THREE.LineSegments ||
+            child instanceof THREE.Points ||
+            child instanceof THREE.Sprite ||
+            child instanceof THREE.InstancedMesh
+          ) {
+            child.geometry?.dispose?.();
             const material = child.material as THREE.Material | THREE.Material[];
             const materials = Array.isArray(material) ? material : [material];
             materials.forEach((item) => {
@@ -620,10 +957,17 @@ export default function SceneCanvas() {
         });
       };
       disposeObject(world);
+      glowTexture.dispose();
+      farGeometry.dispose();
+      nearGeometry.dispose();
+      streakGeometry.dispose();
       tickGeometry.dispose();
+      spokeGeometry.dispose();
       bladeEdges.dispose();
       frameGeometry.dispose();
+      monolithGeometry.dispose();
       beamGeometry.dispose();
+      gatewayShardGeometry.dispose();
       artifactGeometries.forEach((geometry) => geometry.dispose());
       composer?.dispose();
       renderer.dispose();
