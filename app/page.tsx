@@ -6,6 +6,13 @@ import styles from "./page.module.css";
 
 const MAIN_PROFILE = "https://lavine-site.vercel.app/profile";
 const SCENE_LABELS = ["ORIGIN", "THRESHOLD", "LOGIC", "ARTIFACTS", "GATEWAY"];
+const SCENE_META = [
+  { code: "00-A", title: "ORIGIN", note: "Archive handshake / identity channel", coord: "22.3193°N 114.1694°E" },
+  { code: "01-T", title: "THRESHOLD", note: "Mechanical seal / one-way passage", coord: "ACCESS VECTOR 024°" },
+  { code: "02-L", title: "LOGIC", note: "Build · measure · ship", coord: "SYSTEM LAYER / ACTIVE" },
+  { code: "03-A", title: "ARTIFACTS", note: "Objects with evidence attached", coord: "OBJECT FIELD / 04" },
+  { code: "04-G", title: "GATEWAY", note: "Exit cinematic layer / enter record", coord: "PROFILE LINK / OPEN" },
+];
 
 const artifacts = [
   {
@@ -81,6 +88,7 @@ export default function LavineArchive() {
       stage.style.setProperty("--impact", impact.toFixed(4));
       stage.style.setProperty("--story-progress", current.toFixed(4));
       stage.style.setProperty("--gateway", clamp((current - 0.78) / 0.22, 0, 1).toFixed(4));
+      stage.style.setProperty("--scan", ((current * 100) % 100).toFixed(3));
 
       const position = current * (SCENE_LABELS.length - 1);
       const nextScene = clamp(Math.round(position), 0, SCENE_LABELS.length - 1);
@@ -112,8 +120,10 @@ export default function LavineArchive() {
     };
   }, []);
 
+  const sceneMeta = SCENE_META[activeScene];
+
   return (
-    <main ref={stageRef} className={styles.stage}>
+    <main ref={stageRef} data-scene={activeScene} className={styles.stage}>
       <SceneCanvas />
 
       <div className={styles.fx} aria-hidden="true">
@@ -123,6 +133,23 @@ export default function LavineArchive() {
         <div className={styles.grain} />
         <div className={styles.reticle} />
         <div className={styles.transitionFlash} />
+        <div className={styles.scanBeam} />
+        <div className={styles.edgeGlow} />
+      </div>
+
+      <div className={styles.frameCorners} aria-hidden="true">
+        <i /><i /><i /><i />
+      </div>
+
+      <div className={styles.sceneGhost} aria-hidden="true">
+        <span>0{activeScene + 1}</span>
+        <b>{sceneMeta.title}</b>
+      </div>
+
+      <div className={styles.sceneCaption} aria-hidden="true">
+        <span>{sceneMeta.code}</span>
+        <strong>{sceneMeta.note}</strong>
+        <small>{sceneMeta.coord}</small>
       </div>
 
       <header className={styles.header}>
@@ -242,6 +269,19 @@ export default function LavineArchive() {
           <a href="https://github.com/lavine888" target="_blank" rel="noreferrer" className={styles.secondary}>GitHub / source</a>
         </div>
       </section>
+
+      <div className={styles.signalBand} aria-hidden="true">
+        <div>
+          <span>BUILD SYSTEMS</span><i />
+          <span>TEST REALITY</span><i />
+          <span>SHIP SIGNALS</span><i />
+          <span>ARCHIVE OBJECTS</span><i />
+          <span>BUILD SYSTEMS</span><i />
+          <span>TEST REALITY</span><i />
+          <span>SHIP SIGNALS</span><i />
+          <span>ARCHIVE OBJECTS</span><i />
+        </div>
+      </div>
 
       <div className={styles.progressTrack} aria-hidden="true">
         <div ref={progressRef} className={styles.progress} />
