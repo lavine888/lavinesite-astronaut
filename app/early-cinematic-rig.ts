@@ -83,27 +83,25 @@ const GLASS_SHADER = {
     void main() {
       vec3 V = normalize(cameraPosition - vWorldPosition);
       float facing = clamp(dot(normalize(vWorldNormal), V), 0.0, 1.0);
-      float fresnel = pow(1.0 - facing, 2.7);
+      float fresnel = pow(1.0 - facing, 3.0);
 
       float scanY = mix(2.3, -2.3, clamp(uMeasure, 0.0, 1.0));
       float scan = exp(-abs(vLocalPosition.y - scanY) * 13.0) * smoothstep(0.02, 0.28, uMeasure);
       float latitude = 0.5 + 0.5 * sin(vLocalPosition.y * 7.0 - uTime * 0.42);
       float longitude = 0.5 + 0.5 * sin(atan(vLocalPosition.z, vLocalPosition.x) * 6.0 + uTime * 0.18);
       float caustic = pow(latitude * longitude, 7.0) * uMeasure;
-      float topFade = smoothstep(-2.4, 1.8, vLocalPosition.y);
 
-      vec3 ink = vec3(0.025, 0.042, 0.043);
-      vec3 cold = vec3(0.43, 0.68, 0.64);
-      vec3 pale = vec3(0.72, 0.84, 0.80);
-      vec3 warm = vec3(0.64, 0.47, 0.29);
-      vec3 color = mix(ink, cold, fresnel * 0.84);
-      color = mix(color, pale, fresnel * fresnel * 0.18 + scan * 0.22);
-      color = mix(color, warm, uShip * (0.14 + fresnel * 0.30));
-      color += cold * scan * 1.15;
-      color += pale * caustic * 0.07;
-      color += cold * topFade * 0.018;
+      vec3 ink = vec3(0.010, 0.013, 0.013);
+      vec3 cold = vec3(0.40, 0.46, 0.44);
+      vec3 pale = vec3(0.68, 0.72, 0.70);
+      vec3 warm = vec3(0.46, 0.36, 0.25);
+      vec3 color = mix(ink, cold, fresnel * 0.72);
+      color = mix(color, pale, fresnel * fresnel * 0.15 + scan * 0.17);
+      color = mix(color, warm, uShip * (0.10 + fresnel * 0.18));
+      color += pale * scan * 0.62;
+      color += pale * caustic * 0.025;
 
-      float alpha = uOpacity * (0.038 + fresnel * 0.39 + scan * 0.20 + caustic * 0.035);
+      float alpha = uOpacity * (0.012 + fresnel * 0.19 + scan * 0.10 + caustic * 0.012);
       gl_FragColor = vec4(color, alpha);
     }
   `,
@@ -138,8 +136,8 @@ const ENERGY_DISC_SHADER = {
       float core = (1.0 - smoothstep(0.05, 0.72, r)) * 0.22;
       float rays = pow(max(0.0, sin(a * 12.0 + uTime * 0.48)), 18.0) * (1.0 - smoothstep(0.22, 0.9, r)) * 0.2;
       float slit = exp(-abs(p.y - sin(uTime * 0.55) * 0.08) * 22.0) * 0.07;
-      vec3 cold = vec3(0.49, 0.75, 0.70);
-      vec3 warm = vec3(0.74, 0.53, 0.31);
+      vec3 cold = vec3(0.58, 0.64, 0.61);
+      vec3 warm = vec3(0.60, 0.47, 0.32);
       vec3 color = mix(cold, warm, clamp(uWarm, 0.0, 1.0));
       float alpha = (ringA * 0.56 + ringB + core + rays + slit) * mask * uIntensity;
       gl_FragColor = vec4(color * (0.74 + ringA * 0.82 + rays), alpha);
@@ -148,7 +146,6 @@ const ENERGY_DISC_SHADER = {
 };
 
 export function createEarlyCinematicRig(world: THREE.Group, hatch: THREE.Group, isMobile: boolean) {
-  // 00 — Monumental architectural wipe: oversized and partially outside frame.
   const sweep = new THREE.Group();
   world.add(sweep);
 
@@ -187,7 +184,6 @@ export function createEarlyCinematicRig(world: THREE.Group, hatch: THREE.Group, 
     plate.rotation.set(0.2 - index * 0.035, 0.36 + index * 0.09, -0.18 + index * 0.19);
     sweep.add(plate);
     sweepPlates.push(plate);
-
     if (index < 3) {
       const edge = new THREE.LineSegments(new THREE.EdgesGeometry(geometry, 25), edgeMaterial.clone());
       edge.rotation.copy(plate.rotation);
@@ -200,25 +196,13 @@ export function createEarlyCinematicRig(world: THREE.Group, hatch: THREE.Group, 
   sweepSpine.position.set(-0.95, 0.35, -0.22);
   sweep.add(sweepSpine);
 
-  const coldSeamMaterial = new THREE.MeshBasicMaterial({
-    color: 0xc5ded5,
-    transparent: true,
-    opacity: 0.24,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-  });
+  const coldSeamMaterial = new THREE.MeshBasicMaterial({ color: 0xc5ded5, transparent: true, opacity: 0.24, blending: THREE.AdditiveBlending, depthWrite: false });
   const sweepAccent = new THREE.Mesh(new THREE.CapsuleGeometry(0.022, 6.9, 3, 8), coldSeamMaterial);
   sweepAccent.rotation.copy(sweepSpine.rotation);
   sweepAccent.position.set(-0.68, 0.58, 0.035);
   sweep.add(sweepAccent);
 
-  const warmAccentMaterial = new THREE.MeshBasicMaterial({
-    color: 0xc99a61,
-    transparent: true,
-    opacity: 0.2,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-  });
+  const warmAccentMaterial = new THREE.MeshBasicMaterial({ color: 0xc99a61, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, depthWrite: false });
   const warmAccent = new THREE.Mesh(new THREE.CapsuleGeometry(0.02, 2.4, 3, 8), warmAccentMaterial);
   warmAccent.rotation.set(0.13, 0.35, -0.72);
   warmAccent.position.set(2.35, -1.5, 0.05);
@@ -241,22 +225,15 @@ export function createEarlyCinematicRig(world: THREE.Group, hatch: THREE.Group, 
   world.add(openingSpot);
 
   const logicTarget = new THREE.Object3D();
-  logicTarget.position.set(-0.35, 0.1, -15.5);
+  logicTarget.position.set(0.45, 0.05, -15.6);
   world.add(logicTarget);
-  const logicSpot = new THREE.SpotLight(0xb89366, 0, 24, Math.PI * 0.19, 0.76, 2.0);
+  const logicSpot = new THREE.SpotLight(0x9b886f, 0, 24, Math.PI * 0.19, 0.76, 2.0);
   logicSpot.position.set(4.8, 4.4, -10.3);
   logicSpot.target = logicTarget;
   world.add(logicSpot);
 
-  // 01 — Hatch unlock wave plus one concentrated energy event behind the iris.
   const latchGeometry = new THREE.CapsuleGeometry(0.07, 0.5, 4, 8);
-  const latchMaterial = new THREE.MeshStandardMaterial({
-    color: 0x66746f,
-    roughness: 0.2,
-    metalness: 0.94,
-    emissive: 0x223630,
-    emissiveIntensity: 0.13,
-  });
+  const latchMaterial = new THREE.MeshStandardMaterial({ color: 0x66746f, roughness: 0.2, metalness: 0.94, emissive: 0x223630, emissiveIntensity: 0.13 });
   const latchMesh = new THREE.InstancedMesh(latchGeometry, latchMaterial, 8);
   latchMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   hatch.add(latchMesh);
@@ -267,135 +244,62 @@ export function createEarlyCinematicRig(world: THREE.Group, hatch: THREE.Group, 
   for (let i = 0; i < 8; i += 1) latchMesh.setColorAt(i, latchCold);
   if (latchMesh.instanceColor) latchMesh.instanceColor.needsUpdate = true;
 
-  const lockHaloMaterial = new THREE.MeshBasicMaterial({
-    color: 0xd7e5df,
-    transparent: true,
-    opacity: 0.045,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-  });
+  const lockHaloMaterial = new THREE.MeshBasicMaterial({ color: 0xd7e5df, transparent: true, opacity: 0.045, depthWrite: false, blending: THREE.AdditiveBlending });
   const lockHalo = new THREE.Mesh(new THREE.TorusGeometry(4.58, 0.022, 6, 96), lockHaloMaterial);
   hatch.add(lockHalo);
 
-  const confirmHaloMaterial = new THREE.MeshBasicMaterial({
-    color: 0xc49a68,
-    transparent: true,
-    opacity: 0,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-  });
+  const confirmHaloMaterial = new THREE.MeshBasicMaterial({ color: 0xc49a68, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
   const confirmHalo = new THREE.Mesh(new THREE.TorusGeometry(4.38, 0.018, 6, 96), confirmHaloMaterial);
   hatch.add(confirmHalo);
 
-  const hatchEnergyMaterial = new THREE.ShaderMaterial({
-    uniforms: THREE.UniformsUtils.clone(ENERGY_DISC_SHADER.uniforms),
-    vertexShader: ENERGY_DISC_SHADER.vertexShader,
-    fragmentShader: ENERGY_DISC_SHADER.fragmentShader,
-    transparent: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-    side: THREE.DoubleSide,
-  });
+  const hatchEnergyMaterial = new THREE.ShaderMaterial({ uniforms: THREE.UniformsUtils.clone(ENERGY_DISC_SHADER.uniforms), vertexShader: ENERGY_DISC_SHADER.vertexShader, fragmentShader: ENERGY_DISC_SHADER.fragmentShader, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
   const hatchEnergy = new THREE.Mesh(new THREE.CircleGeometry(3.72, 64), hatchEnergyMaterial);
   hatchEnergy.position.z = -0.34;
   hatch.add(hatchEnergy);
 
-  const shockMaterial = new THREE.MeshBasicMaterial({
-    color: 0xe5f1ec,
-    transparent: true,
-    opacity: 0,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-  });
+  const shockMaterial = new THREE.MeshBasicMaterial({ color: 0xe5f1ec, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
   const hatchShock = new THREE.Mesh(new THREE.TorusGeometry(3.72, 0.035, 6, 96), shockMaterial);
   hatchShock.position.z = 0.16;
   hatch.add(hatchShock);
 
-  // 02 — Designed data specimen with a brief eclipse frame at scan peak.
   const dataRig = new THREE.Group();
-  dataRig.position.set(-0.52, 0.05, -15.65);
-  dataRig.rotation.z = -0.065;
+  dataRig.position.set(0.45, 0.02, -15.75);
+  dataRig.rotation.z = -0.045;
   world.add(dataRig);
 
   const profile = [
-    new THREE.Vector2(0.22, -2.18),
-    new THREE.Vector2(0.68, -1.83),
-    new THREE.Vector2(1.18, -1.18),
-    new THREE.Vector2(1.52, -0.38),
-    new THREE.Vector2(1.58, 0.38),
-    new THREE.Vector2(1.31, 1.14),
-    new THREE.Vector2(0.78, 1.8),
-    new THREE.Vector2(0.27, 2.15),
+    new THREE.Vector2(0.22, -2.18), new THREE.Vector2(0.68, -1.83), new THREE.Vector2(1.18, -1.18), new THREE.Vector2(1.52, -0.38),
+    new THREE.Vector2(1.58, 0.38), new THREE.Vector2(1.31, 1.14), new THREE.Vector2(0.78, 1.8), new THREE.Vector2(0.27, 2.15),
   ];
   const shellGeometry = new THREE.LatheGeometry(profile, isMobile ? 24 : 34);
   shellGeometry.scale(1.04, 1.0, 0.87);
   shellGeometry.computeVertexNormals();
 
-  const shellMaterial = new THREE.ShaderMaterial({
-    uniforms: THREE.UniformsUtils.clone(GLASS_SHADER.uniforms),
-    vertexShader: GLASS_SHADER.vertexShader,
-    fragmentShader: GLASS_SHADER.fragmentShader,
-    transparent: true,
-    depthWrite: false,
-    side: THREE.DoubleSide,
-  });
+  const shellMaterial = new THREE.ShaderMaterial({ uniforms: THREE.UniformsUtils.clone(GLASS_SHADER.uniforms), vertexShader: GLASS_SHADER.vertexShader, fragmentShader: GLASS_SHADER.fragmentShader, transparent: true, depthWrite: false, side: THREE.DoubleSide });
   const shell = new THREE.Mesh(shellGeometry, shellMaterial);
   dataRig.add(shell);
 
-  const eclipseMaterial = new THREE.ShaderMaterial({
-    uniforms: THREE.UniformsUtils.clone(ENERGY_DISC_SHADER.uniforms),
-    vertexShader: ENERGY_DISC_SHADER.vertexShader,
-    fragmentShader: ENERGY_DISC_SHADER.fragmentShader,
-    transparent: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-    side: THREE.DoubleSide,
-  });
+  const eclipseMaterial = new THREE.ShaderMaterial({ uniforms: THREE.UniformsUtils.clone(ENERGY_DISC_SHADER.uniforms), vertexShader: ENERGY_DISC_SHADER.vertexShader, fragmentShader: ENERGY_DISC_SHADER.fragmentShader, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
   const eclipse = new THREE.Mesh(new THREE.CircleGeometry(3.72, 64), eclipseMaterial);
   eclipse.position.z = -0.72;
   eclipse.scale.set(1.08, 1.08, 1);
   dataRig.add(eclipse);
 
-  const innerShellMaterial = new THREE.MeshBasicMaterial({
-    color: 0x76958d,
-    transparent: true,
-    opacity: 0,
-    wireframe: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-  });
+  const innerShellMaterial = new THREE.MeshBasicMaterial({ color: 0x737a77, transparent: true, opacity: 0, wireframe: true, depthWrite: false, blending: THREE.AdditiveBlending });
   const innerShell = new THREE.Mesh(shellGeometry.clone(), innerShellMaterial);
   innerShell.scale.setScalar(0.81);
   dataRig.add(innerShell);
 
-  const coreMaterial = new THREE.MeshStandardMaterial({
-    color: 0x8e704b,
-    emissive: 0x704c2c,
-    emissiveIntensity: 0.5,
-    roughness: 0.2,
-    metalness: 0.74,
-  });
-  const core = new THREE.Mesh(new THREE.DodecahedronGeometry(0.6, 0), coreMaterial);
+  const coreMaterial = new THREE.MeshStandardMaterial({ color: 0x756047, emissive: 0x3f3021, emissiveIntensity: 0.38, roughness: 0.26, metalness: 0.78 });
+  const core = new THREE.Mesh(new THREE.DodecahedronGeometry(0.58, 0), coreMaterial);
   core.rotation.set(0.25, 0.5, -0.1);
   dataRig.add(core);
 
-  const coreHaloMaterial = new THREE.MeshBasicMaterial({
-    color: 0xd1aa77,
-    transparent: true,
-    opacity: 0.1,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-  });
-  const coreHalo = new THREE.Mesh(new THREE.SphereGeometry(0.88, 16, 10), coreHaloMaterial);
+  const coreHaloMaterial = new THREE.MeshBasicMaterial({ color: 0xa88a64, transparent: true, opacity: 0.08, depthWrite: false, blending: THREE.AdditiveBlending });
+  const coreHalo = new THREE.Mesh(new THREE.SphereGeometry(0.84, 16, 10), coreHaloMaterial);
   dataRig.add(coreHalo);
 
-  const orbitMaterial = new THREE.MeshBasicMaterial({
-    color: 0xb9cec7,
-    transparent: true,
-    opacity: 0.1,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-  });
+  const orbitMaterial = new THREE.MeshBasicMaterial({ color: 0xaeb8b4, transparent: true, opacity: 0.08, depthWrite: false, blending: THREE.AdditiveBlending });
   const orbits: THREE.Mesh[] = [];
   [
     { radius: 2.42, arc: Math.PI * 1.52, rotation: [Math.PI / 2 + 0.18, 0.32, 0.08] as const },
@@ -407,25 +311,12 @@ export function createEarlyCinematicRig(world: THREE.Group, hatch: THREE.Group, 
     orbits.push(orbit);
   });
 
-  const scanRingMaterial = new THREE.MeshBasicMaterial({
-    color: 0xe3f3ed,
-    transparent: true,
-    opacity: 0,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-  });
+  const scanRingMaterial = new THREE.MeshBasicMaterial({ color: 0xd6dcd9, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
   const scanRing = new THREE.Mesh(new THREE.TorusGeometry(2.22, 0.024, 5, 68), scanRingMaterial);
   scanRing.rotation.x = Math.PI / 2;
   dataRig.add(scanRing);
 
-  const pedestalMaterial = new THREE.MeshBasicMaterial({
-    color: 0x8fb5aa,
-    transparent: true,
-    opacity: 0,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-    side: THREE.DoubleSide,
-  });
+  const pedestalMaterial = new THREE.MeshBasicMaterial({ color: 0x7e8884, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
   const pedestal = new THREE.Mesh(new THREE.RingGeometry(1.6, 2.95, 64), pedestalMaterial);
   pedestal.rotation.x = -Math.PI / 2;
   pedestal.position.y = -2.47;
@@ -433,23 +324,12 @@ export function createEarlyCinematicRig(world: THREE.Group, hatch: THREE.Group, 
 
   const fragmentCount = isMobile ? 8 : 13;
   const fragmentGeometry = makeShardGeometry();
-  const fragmentMaterial = new THREE.MeshStandardMaterial({
-    color: 0x9faea9,
-    roughness: 0.22,
-    metalness: 0.82,
-    emissive: 0x0a1110,
-    emissiveIntensity: 0.16,
-  });
+  const fragmentMaterial = new THREE.MeshStandardMaterial({ color: 0x858d89, roughness: 0.28, metalness: 0.84, emissive: 0x060807, emissiveIntensity: 0.1 });
   const fragments = new THREE.InstancedMesh(fragmentGeometry, fragmentMaterial, fragmentCount);
   fragments.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   dataRig.add(fragments);
   const fragmentDummy = new THREE.Object3D();
-  const fragmentSeeds = Array.from({ length: fragmentCount }, (_, i) => ({
-    angle: (i / fragmentCount) * Math.PI * 2 + (i % 3) * 0.37,
-    height: ((i % 5) - 2) * 0.44,
-    depth: ((i % 4) - 1.5) * 0.18,
-    spread: 0.28 + (i % 4) * 0.19,
-  }));
+  const fragmentSeeds = Array.from({ length: fragmentCount }, (_, i) => ({ angle: (i / fragmentCount) * Math.PI * 2 + (i % 3) * 0.37, height: ((i % 5) - 2) * 0.44, depth: ((i % 4) - 1.5) * 0.18, spread: 0.28 + (i % 4) * 0.19 }));
 
   const pointCount = isMobile ? 72 : 145;
   const pointPositions = new Float32Array(pointCount * 3);
@@ -463,26 +343,18 @@ export function createEarlyCinematicRig(world: THREE.Group, hatch: THREE.Group, 
   }
   const pointGeometry = new THREE.BufferGeometry();
   pointGeometry.setAttribute("position", new THREE.BufferAttribute(pointPositions, 3));
-  const pointMaterial = new THREE.PointsMaterial({
-    color: 0xdaece5,
-    size: isMobile ? 0.021 : 0.027,
-    transparent: true,
-    opacity: 0,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-  });
+  const pointMaterial = new THREE.PointsMaterial({ color: 0xc9cfcc, size: isMobile ? 0.02 : 0.025, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
   const dataPoints = new THREE.Points(pointGeometry, pointMaterial);
   dataRig.add(dataPoints);
 
-  const coldLight = new THREE.PointLight(0x8fbdb2, 0, 10, 2.1);
+  const coldLight = new THREE.PointLight(0x9aa39f, 0, 10, 2.1);
   coldLight.position.set(1.8, 1.7, 2.2);
   dataRig.add(coldLight);
-  const warmLight = new THREE.PointLight(0xb1875a, 0, 7, 2.1);
+  const warmLight = new THREE.PointLight(0x8e7558, 0, 7, 2.1);
   warmLight.position.set(-1.1, -0.7, 1.4);
   dataRig.add(warmLight);
 
   const update = (progress: number, time: number) => {
-    // Opening hero frame: larger than the viewport, then a clean lateral wipe.
     const sweepReveal = smoothstep(0.0, 0.052, progress);
     const sweepTravel = smoothstep(0.052, 0.105, progress);
     const sweepOut = smoothstep(0.105, 0.178, progress);
@@ -493,15 +365,12 @@ export function createEarlyCinematicRig(world: THREE.Group, hatch: THREE.Group, 
     sweep.rotation.y = -0.16 + sweepReveal * 0.1 + sweepTravel * 0.1 + sweepOut * 0.065;
     sweep.rotation.z = -0.08 + sweepReveal * 0.03 + sweepTravel * 0.065 + sweepOut * 0.065;
     sweep.scale.setScalar(1.28 + sweepReveal * 0.06 - sweepOut * 0.035);
-    sweepPlates.forEach((plate, index) => {
-      plate.rotation.z += (index % 2 === 0 ? 1 : -1) * 0.00038;
-    });
+    sweepPlates.forEach((plate, index) => { plate.rotation.z += (index % 2 === 0 ? 1 : -1) * 0.00038; });
     sweepLight.intensity = (1 - sweepOut) * (3.1 + sweepReveal * 6.0);
     coldSeamMaterial.opacity = (1 - sweepOut) * (0.14 + sweepTravel * 0.22);
     warmAccentMaterial.opacity = (1 - sweepOut) * (0.1 + sweepReveal * 0.22);
     openingSpot.intensity = (1 - smoothstep(0.17, 0.25, progress)) * (4.0 + sweepReveal * 3.6);
 
-    // Hatch: restrained unlock, then a single energy convergence + shock ring.
     const unlockMaster = smoothstep(0.055, 0.17, progress);
     for (let i = 0; i < 8; i += 1) {
       const angle = (i / 8) * Math.PI * 2;
@@ -535,7 +404,6 @@ export function createEarlyCinematicRig(world: THREE.Group, hatch: THREE.Group, 
     hatchShock.scale.setScalar(0.72 + hatchBurst * 0.56);
     hatchShock.rotation.z = time * 0.08;
 
-    // BUILD → MEASURE → SHIP with one decisive eclipse frame at scan peak.
     const appear = smoothstep(0.245, 0.33, progress);
     const build = smoothstep(0.27, 0.36, progress);
     const measure = smoothstep(0.37, 0.50, progress);
@@ -545,63 +413,63 @@ export function createEarlyCinematicRig(world: THREE.Group, hatch: THREE.Group, 
     const scanHero = pulse(progress, 0.447, 0.075) * visibility;
     dataRig.visible = progress > 0.215 && progress < 0.775;
 
-    dataRig.rotation.y = -0.34 + time * 0.045 + measure * 0.27;
-    dataRig.rotation.x = -0.04 + Math.sin(time * 0.25) * 0.015;
-    dataRig.position.x = -0.52 + measure * 0.3 + ship * 0.76;
-    dataRig.position.y = 0.05 + Math.sin(time * 0.38) * 0.038 + ship * 0.2;
-    dataRig.scale.setScalar((0.76 + appear * 0.26 + scanHero * 0.035) * (1 - ship * 0.05));
+    dataRig.rotation.y = -0.28 + time * 0.038 + measure * 0.23;
+    dataRig.rotation.x = -0.035 + Math.sin(time * 0.25) * 0.012;
+    dataRig.position.x = 0.45 + measure * 0.22 + ship * 0.62;
+    dataRig.position.y = 0.02 + Math.sin(time * 0.38) * 0.03 + ship * 0.16;
+    dataRig.scale.setScalar((0.62 + appear * 0.20 + scanHero * 0.02) * (1 - ship * 0.05));
 
     shellMaterial.uniforms.uTime.value = time;
     shellMaterial.uniforms.uMeasure.value = measure;
     shellMaterial.uniforms.uShip.value = ship;
-    shellMaterial.uniforms.uOpacity.value = visibility * (1 - scanHero * 0.16);
+    shellMaterial.uniforms.uOpacity.value = visibility * 0.72 * (1 - scanHero * 0.2);
 
     eclipseMaterial.uniforms.uTime.value = time;
-    eclipseMaterial.uniforms.uIntensity.value = scanHero * 0.78;
-    eclipseMaterial.uniforms.uWarm.value = 0.08 + ship * 0.28;
+    eclipseMaterial.uniforms.uIntensity.value = scanHero * 0.42;
+    eclipseMaterial.uniforms.uWarm.value = 0.28 + ship * 0.24;
     eclipse.rotation.z = time * 0.022;
-    eclipse.scale.setScalar(1.03 + scanHero * 0.1);
+    eclipse.scale.setScalar(0.92 + scanHero * 0.08);
 
-    innerShellMaterial.opacity = visibility * (0.012 + measure * 0.13 - ship * 0.06 + scanHero * 0.075);
+    innerShellMaterial.opacity = visibility * (0.008 + measure * 0.08 - ship * 0.04 + scanHero * 0.04);
     innerShell.rotation.y = -time * (0.03 + measure * 0.07);
-    pointMaterial.opacity = visibility * (measure * 0.28 + ship * 0.06 + scanHero * 0.18);
+    pointMaterial.opacity = visibility * (measure * 0.18 + ship * 0.04 + scanHero * 0.12);
     dataPoints.rotation.y = -time * (0.04 + measure * 0.1);
 
     const scanTravel = clamp((measure - 0.03) / 0.94, 0, 1);
     scanRing.position.y = lerp(2.2, -2.2, scanTravel);
-    scanRing.scale.setScalar(0.66 + Math.sin(scanTravel * Math.PI) * 0.34 + scanHero * 0.05);
-    scanRingMaterial.opacity = visibility * Math.sin(scanTravel * Math.PI) * 0.42 + scanHero * 0.18;
+    scanRing.scale.setScalar(0.66 + Math.sin(scanTravel * Math.PI) * 0.28 + scanHero * 0.03);
+    scanRingMaterial.opacity = visibility * Math.sin(scanTravel * Math.PI) * 0.25 + scanHero * 0.1;
 
-    core.rotation.x = 0.25 + time * 0.1;
-    core.rotation.y = 0.5 + time * 0.16;
-    core.scale.setScalar(0.73 + appear * 0.21 + ship * 0.07 + scanHero * 0.18);
-    coreMaterial.emissiveIntensity = 0.38 + appear * 0.4 + measure * 0.3 + ship * 1.2 + scanHero * 1.15;
-    coreHalo.scale.setScalar(0.9 + Math.sin(time * 0.68) * 0.02 + ship * 0.1 + scanHero * 0.13);
-    coreHaloMaterial.opacity = visibility * (0.035 + measure * 0.052 + ship * 0.09) + scanHero * 0.18;
+    core.rotation.x = 0.25 + time * 0.08;
+    core.rotation.y = 0.5 + time * 0.12;
+    core.scale.setScalar(0.68 + appear * 0.16 + ship * 0.05 + scanHero * 0.09);
+    coreMaterial.emissiveIntensity = 0.28 + appear * 0.25 + measure * 0.15 + ship * 0.55 + scanHero * 0.45;
+    coreHalo.scale.setScalar(0.86 + Math.sin(time * 0.68) * 0.015 + ship * 0.06 + scanHero * 0.07);
+    coreHaloMaterial.opacity = visibility * (0.018 + measure * 0.025 + ship * 0.04) + scanHero * 0.07;
 
     orbits.forEach((orbit, index) => {
-      orbit.rotation.z += (index % 2 === 0 ? 1 : -1) * (0.00055 + measure * 0.0016 + ship * 0.003);
-      (orbit.material as THREE.MeshBasicMaterial).opacity = visibility * (0.035 + build * 0.035 + measure * 0.042 + ship * 0.025) + scanHero * 0.04;
+      orbit.rotation.z += (index % 2 === 0 ? 1 : -1) * (0.00045 + measure * 0.0012 + ship * 0.0024);
+      (orbit.material as THREE.MeshBasicMaterial).opacity = visibility * (0.024 + build * 0.025 + measure * 0.028 + ship * 0.018) + scanHero * 0.025;
     });
 
-    pedestalMaterial.opacity = visibility * (0.014 + measure * 0.035 + ship * 0.016) + scanHero * 0.075;
-    pedestal.scale.setScalar(0.96 + scanHero * 0.11);
-    pedestal.rotation.z = time * 0.022;
-    coldLight.intensity = visibility * (0.5 + measure * 2.4 + ship * 1.1) + scanHero * 4.2;
-    warmLight.intensity = visibility * (0.32 + ship * 3.6) + scanHero * 1.4;
-    logicSpot.intensity = visibility * (1.2 + measure * 2.7 + ship * 1.8) + scanHero * 4.4;
+    pedestalMaterial.opacity = visibility * (0.008 + measure * 0.02 + ship * 0.01) + scanHero * 0.035;
+    pedestal.scale.setScalar(0.9 + scanHero * 0.07);
+    pedestal.rotation.z = time * 0.018;
+    coldLight.intensity = visibility * (0.25 + measure * 1.25 + ship * 0.55) + scanHero * 1.8;
+    warmLight.intensity = visibility * (0.18 + ship * 1.5) + scanHero * 0.5;
+    logicSpot.intensity = visibility * (0.6 + measure * 1.2 + ship * 0.8) + scanHero * 1.8;
 
     fragmentSeeds.forEach((seed, i) => {
-      const angle = seed.angle + time * 0.026;
-      const preRadius = 4.15 + seed.spread;
-      const assembledRadius = 2.34 + seed.spread * 0.16;
-      const radius = lerp(preRadius, assembledRadius, build) + ship * (2.18 + seed.spread * 1.22) + scanHero * 0.06;
-      const y = lerp(seed.height * 1.82, seed.height, build) + ship * (i % 2 === 0 ? 0.64 : -0.5);
-      const z = Math.sin(angle) * lerp(1.62, 0.68, build) + seed.depth + ship * ((i % 3) - 1) * 0.6;
-      fragmentDummy.position.set(Math.cos(angle) * radius + ship * 1.18, y, z);
-      fragmentDummy.rotation.set(angle * 0.2 + measure * 0.34, 0.16 + angle, angle * 0.62 + ship * 1.0);
-      const scale = visibility * (0.7 + build * 0.28) * (1 + scanHero * 0.08);
-      fragmentDummy.scale.set(scale, scale * (1 + ship * 0.9), scale * 0.8);
+      const angle = seed.angle + time * 0.022;
+      const preRadius = 4.0 + seed.spread;
+      const assembledRadius = 2.2 + seed.spread * 0.14;
+      const radius = lerp(preRadius, assembledRadius, build) + ship * (1.9 + seed.spread * 1.05) + scanHero * 0.04;
+      const y = lerp(seed.height * 1.7, seed.height, build) + ship * (i % 2 === 0 ? 0.52 : -0.42);
+      const z = Math.sin(angle) * lerp(1.5, 0.62, build) + seed.depth + ship * ((i % 3) - 1) * 0.52;
+      fragmentDummy.position.set(Math.cos(angle) * radius + ship * 0.9, y, z);
+      fragmentDummy.rotation.set(angle * 0.16 + measure * 0.24, 0.12 + angle, angle * 0.5 + ship * 0.78);
+      const scale = visibility * (0.62 + build * 0.22) * (1 + scanHero * 0.04);
+      fragmentDummy.scale.set(scale, scale * (1 + ship * 0.68), scale * 0.76);
       fragmentDummy.updateMatrix();
       fragments.setMatrixAt(i, fragmentDummy.matrix);
     });
