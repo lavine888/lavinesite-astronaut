@@ -91,17 +91,17 @@ const GLASS_SHADER = {
       float longitude = 0.5 + 0.5 * sin(atan(vLocalPosition.z, vLocalPosition.x) * 6.0 + uTime * 0.18);
       float caustic = pow(latitude * longitude, 7.0) * uMeasure;
 
-      vec3 ink = vec3(0.010, 0.013, 0.013);
-      vec3 cold = vec3(0.40, 0.46, 0.44);
-      vec3 pale = vec3(0.68, 0.72, 0.70);
-      vec3 warm = vec3(0.46, 0.36, 0.25);
-      vec3 color = mix(ink, cold, fresnel * 0.72);
-      color = mix(color, pale, fresnel * fresnel * 0.15 + scan * 0.17);
-      color = mix(color, warm, uShip * (0.10 + fresnel * 0.18));
-      color += pale * scan * 0.62;
-      color += pale * caustic * 0.025;
+      vec3 ink = vec3(0.024, 0.018, 0.011);
+      vec3 darkGold = vec3(0.31, 0.235, 0.14);
+      vec3 oldGold = vec3(0.58, 0.46, 0.27);
+      vec3 deepGold = vec3(0.43, 0.31, 0.17);
+      vec3 color = mix(ink, darkGold, fresnel * 0.70);
+      color = mix(color, oldGold, fresnel * fresnel * 0.13 + scan * 0.15);
+      color = mix(color, deepGold, uShip * (0.11 + fresnel * 0.16));
+      color += oldGold * scan * 0.50;
+      color += oldGold * caustic * 0.022;
 
-      float alpha = uOpacity * (0.012 + fresnel * 0.19 + scan * 0.10 + caustic * 0.012);
+      float alpha = uOpacity * (0.012 + fresnel * 0.18 + scan * 0.085 + caustic * 0.01);
       gl_FragColor = vec4(color, alpha);
     }
   `,
@@ -227,7 +227,7 @@ export function createEarlyCinematicRig(world: THREE.Group, hatch: THREE.Group, 
   const logicTarget = new THREE.Object3D();
   logicTarget.position.set(0.45, 0.05, -15.6);
   world.add(logicTarget);
-  const logicSpot = new THREE.SpotLight(0x9b886f, 0, 24, Math.PI * 0.19, 0.76, 2.0);
+  const logicSpot = new THREE.SpotLight(0x7d6442, 0, 24, Math.PI * 0.19, 0.76, 2.0);
   logicSpot.position.set(4.8, 4.4, -10.3);
   logicSpot.target = logicTarget;
   world.add(logicSpot);
@@ -285,21 +285,21 @@ export function createEarlyCinematicRig(world: THREE.Group, hatch: THREE.Group, 
   eclipse.scale.set(1.08, 1.08, 1);
   dataRig.add(eclipse);
 
-  const innerShellMaterial = new THREE.MeshBasicMaterial({ color: 0x737a77, transparent: true, opacity: 0, wireframe: true, depthWrite: false, blending: THREE.AdditiveBlending });
+  const innerShellMaterial = new THREE.MeshBasicMaterial({ color: 0x7c6745, transparent: true, opacity: 0, wireframe: true, depthWrite: false, blending: THREE.AdditiveBlending });
   const innerShell = new THREE.Mesh(shellGeometry.clone(), innerShellMaterial);
   innerShell.scale.setScalar(0.81);
   dataRig.add(innerShell);
 
-  const coreMaterial = new THREE.MeshStandardMaterial({ color: 0x756047, emissive: 0x3f3021, emissiveIntensity: 0.38, roughness: 0.26, metalness: 0.78 });
+  const coreMaterial = new THREE.MeshStandardMaterial({ color: 0x6b5332, emissive: 0x3a2814, emissiveIntensity: 0.34, roughness: 0.28, metalness: 0.8 });
   const core = new THREE.Mesh(new THREE.DodecahedronGeometry(0.58, 0), coreMaterial);
   core.rotation.set(0.25, 0.5, -0.1);
   dataRig.add(core);
 
-  const coreHaloMaterial = new THREE.MeshBasicMaterial({ color: 0xa88a64, transparent: true, opacity: 0.08, depthWrite: false, blending: THREE.AdditiveBlending });
+  const coreHaloMaterial = new THREE.MeshBasicMaterial({ color: 0x9b7848, transparent: true, opacity: 0.055, depthWrite: false, blending: THREE.AdditiveBlending });
   const coreHalo = new THREE.Mesh(new THREE.SphereGeometry(0.84, 16, 10), coreHaloMaterial);
   dataRig.add(coreHalo);
 
-  const orbitMaterial = new THREE.MeshBasicMaterial({ color: 0xaeb8b4, transparent: true, opacity: 0.08, depthWrite: false, blending: THREE.AdditiveBlending });
+  const orbitMaterial = new THREE.MeshBasicMaterial({ color: 0x8b7149, transparent: true, opacity: 0.06, depthWrite: false, blending: THREE.AdditiveBlending });
   const orbits: THREE.Mesh[] = [];
   [
     { radius: 2.42, arc: Math.PI * 1.52, rotation: [Math.PI / 2 + 0.18, 0.32, 0.08] as const },
@@ -311,12 +311,12 @@ export function createEarlyCinematicRig(world: THREE.Group, hatch: THREE.Group, 
     orbits.push(orbit);
   });
 
-  const scanRingMaterial = new THREE.MeshBasicMaterial({ color: 0xd6dcd9, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+  const scanRingMaterial = new THREE.MeshBasicMaterial({ color: 0xaa8655, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
   const scanRing = new THREE.Mesh(new THREE.TorusGeometry(2.22, 0.024, 5, 68), scanRingMaterial);
   scanRing.rotation.x = Math.PI / 2;
   dataRig.add(scanRing);
 
-  const pedestalMaterial = new THREE.MeshBasicMaterial({ color: 0x7e8884, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+  const pedestalMaterial = new THREE.MeshBasicMaterial({ color: 0x68563b, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
   const pedestal = new THREE.Mesh(new THREE.RingGeometry(1.6, 2.95, 64), pedestalMaterial);
   pedestal.rotation.x = -Math.PI / 2;
   pedestal.position.y = -2.47;
@@ -324,7 +324,7 @@ export function createEarlyCinematicRig(world: THREE.Group, hatch: THREE.Group, 
 
   const fragmentCount = isMobile ? 8 : 13;
   const fragmentGeometry = makeShardGeometry();
-  const fragmentMaterial = new THREE.MeshStandardMaterial({ color: 0x858d89, roughness: 0.28, metalness: 0.84, emissive: 0x060807, emissiveIntensity: 0.1 });
+  const fragmentMaterial = new THREE.MeshStandardMaterial({ color: 0x70634a, roughness: 0.3, metalness: 0.84, emissive: 0x100b05, emissiveIntensity: 0.09 });
   const fragments = new THREE.InstancedMesh(fragmentGeometry, fragmentMaterial, fragmentCount);
   fragments.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   dataRig.add(fragments);
@@ -343,14 +343,14 @@ export function createEarlyCinematicRig(world: THREE.Group, hatch: THREE.Group, 
   }
   const pointGeometry = new THREE.BufferGeometry();
   pointGeometry.setAttribute("position", new THREE.BufferAttribute(pointPositions, 3));
-  const pointMaterial = new THREE.PointsMaterial({ color: 0xc9cfcc, size: isMobile ? 0.02 : 0.025, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+  const pointMaterial = new THREE.PointsMaterial({ color: 0x9d8359, size: isMobile ? 0.02 : 0.025, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
   const dataPoints = new THREE.Points(pointGeometry, pointMaterial);
   dataRig.add(dataPoints);
 
-  const coldLight = new THREE.PointLight(0x9aa39f, 0, 10, 2.1);
+  const coldLight = new THREE.PointLight(0x8a704a, 0, 10, 2.1);
   coldLight.position.set(1.8, 1.7, 2.2);
   dataRig.add(coldLight);
-  const warmLight = new THREE.PointLight(0x8e7558, 0, 7, 2.1);
+  const warmLight = new THREE.PointLight(0x6f5230, 0, 7, 2.1);
   warmLight.position.set(-1.1, -0.7, 1.4);
   dataRig.add(warmLight);
 
@@ -425,8 +425,8 @@ export function createEarlyCinematicRig(world: THREE.Group, hatch: THREE.Group, 
     shellMaterial.uniforms.uOpacity.value = visibility * 0.72 * (1 - scanHero * 0.2);
 
     eclipseMaterial.uniforms.uTime.value = time;
-    eclipseMaterial.uniforms.uIntensity.value = scanHero * 0.42;
-    eclipseMaterial.uniforms.uWarm.value = 0.28 + ship * 0.24;
+    eclipseMaterial.uniforms.uIntensity.value = scanHero * 0.38;
+    eclipseMaterial.uniforms.uWarm.value = 0.92 + ship * 0.08;
     eclipse.rotation.z = time * 0.022;
     eclipse.scale.setScalar(0.92 + scanHero * 0.08);
 
@@ -438,26 +438,26 @@ export function createEarlyCinematicRig(world: THREE.Group, hatch: THREE.Group, 
     const scanTravel = clamp((measure - 0.03) / 0.94, 0, 1);
     scanRing.position.y = lerp(2.2, -2.2, scanTravel);
     scanRing.scale.setScalar(0.66 + Math.sin(scanTravel * Math.PI) * 0.28 + scanHero * 0.03);
-    scanRingMaterial.opacity = visibility * Math.sin(scanTravel * Math.PI) * 0.25 + scanHero * 0.1;
+    scanRingMaterial.opacity = visibility * Math.sin(scanTravel * Math.PI) * 0.22 + scanHero * 0.085;
 
     core.rotation.x = 0.25 + time * 0.08;
     core.rotation.y = 0.5 + time * 0.12;
     core.scale.setScalar(0.68 + appear * 0.16 + ship * 0.05 + scanHero * 0.09);
-    coreMaterial.emissiveIntensity = 0.28 + appear * 0.25 + measure * 0.15 + ship * 0.55 + scanHero * 0.45;
+    coreMaterial.emissiveIntensity = 0.24 + appear * 0.20 + measure * 0.12 + ship * 0.40 + scanHero * 0.32;
     coreHalo.scale.setScalar(0.86 + Math.sin(time * 0.68) * 0.015 + ship * 0.06 + scanHero * 0.07);
-    coreHaloMaterial.opacity = visibility * (0.018 + measure * 0.025 + ship * 0.04) + scanHero * 0.07;
+    coreHaloMaterial.opacity = visibility * (0.014 + measure * 0.020 + ship * 0.032) + scanHero * 0.055;
 
     orbits.forEach((orbit, index) => {
       orbit.rotation.z += (index % 2 === 0 ? 1 : -1) * (0.00045 + measure * 0.0012 + ship * 0.0024);
-      (orbit.material as THREE.MeshBasicMaterial).opacity = visibility * (0.024 + build * 0.025 + measure * 0.028 + ship * 0.018) + scanHero * 0.025;
+      (orbit.material as THREE.MeshBasicMaterial).opacity = visibility * (0.020 + build * 0.020 + measure * 0.024 + ship * 0.015) + scanHero * 0.020;
     });
 
-    pedestalMaterial.opacity = visibility * (0.008 + measure * 0.02 + ship * 0.01) + scanHero * 0.035;
+    pedestalMaterial.opacity = visibility * (0.006 + measure * 0.016 + ship * 0.008) + scanHero * 0.025;
     pedestal.scale.setScalar(0.9 + scanHero * 0.07);
     pedestal.rotation.z = time * 0.018;
-    coldLight.intensity = visibility * (0.25 + measure * 1.25 + ship * 0.55) + scanHero * 1.8;
-    warmLight.intensity = visibility * (0.18 + ship * 1.5) + scanHero * 0.5;
-    logicSpot.intensity = visibility * (0.6 + measure * 1.2 + ship * 0.8) + scanHero * 1.8;
+    coldLight.intensity = visibility * (0.20 + measure * 0.95 + ship * 0.38) + scanHero * 1.3;
+    warmLight.intensity = visibility * (0.16 + ship * 1.25) + scanHero * 0.45;
+    logicSpot.intensity = visibility * (0.48 + measure * 1.0 + ship * 0.65) + scanHero * 1.45;
 
     fragmentSeeds.forEach((seed, i) => {
       const angle = seed.angle + time * 0.022;
