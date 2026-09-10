@@ -134,6 +134,12 @@ export default function LavineArchive() {
     <main ref={stageRef} data-scene={activeScene} className={`${styles.stage} ${cinematic.stageBoost}`}>
       <SceneCanvas />
 
+      <div className={archiveFx.archiveBackdrop} aria-hidden="true">
+        <div className={archiveFx.vaultPerspective} />
+        <div className={archiveFx.goldAtmosphere} />
+        <div className={archiveFx.depthSlabs} />
+      </div>
+
       <div className={archiveFx.bootSequence} aria-hidden="true">
         <div className={archiveFx.bootCore}>
           <span>PERSONAL SYSTEM / LX-888</span>
