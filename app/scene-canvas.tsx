@@ -131,7 +131,7 @@ export default function SceneCanvas() {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1 : 1.25));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.94;
+    renderer.toneMappingExposure = 0.86;
     renderer.domElement.setAttribute("aria-hidden", "true");
     mount.appendChild(renderer.domElement);
 
@@ -143,18 +143,18 @@ export default function SceneCanvas() {
     camera.position.set(0, 0, 12);
     scene.add(camera);
 
-    const ambient = new THREE.HemisphereLight(0xc5d4cf, 0x030506, 0.82);
+    const ambient = new THREE.HemisphereLight(0xc5d4cf, 0x030506, 0.64);
     scene.add(ambient);
 
-    const key = new THREE.DirectionalLight(0xeaf1e8, 2.5);
+    const key = new THREE.DirectionalLight(0xeaf1e8, 2.25);
     key.position.set(5, 7, 7);
     scene.add(key);
 
-    const coldRim = new THREE.PointLight(0x8eaaa7, 15, 33, 2.1);
+    const coldRim = new THREE.PointLight(0x8eaaa7, 12.5, 33, 2.1);
     coldRim.position.set(-4, 1, -8);
     scene.add(coldRim);
 
-    const goldRim = new THREE.PointLight(0x92744c, 7.5, 26, 2.2);
+    const goldRim = new THREE.PointLight(0x92744c, 6.5, 26, 2.2);
     goldRim.position.set(4, -1.5, -27);
     scene.add(goldRim);
 
@@ -170,7 +170,6 @@ export default function SceneCanvas() {
       depthWrite: false,
     });
 
-    // Deep field: enough depth to feel alive, but fewer particles than before.
     const farStarCount = isMobile ? 420 : 920;
     const farPositions = new Float32Array(farStarCount * 3);
     for (let i = 0; i < farStarCount; i += 1) {
@@ -212,7 +211,6 @@ export default function SceneCanvas() {
     const nearDust = new THREE.Points(nearGeometry, nearMaterial);
     world.add(nearDust);
 
-    // Transition streaks are one line-segment draw call.
     const streakCount = isMobile ? 28 : 58;
     const streakPositions = new Float32Array(streakCount * 6);
     for (let i = 0; i < streakCount; i += 1) {
@@ -241,7 +239,6 @@ export default function SceneCanvas() {
     const streaks = new THREE.LineSegments(streakGeometry, streakMaterial);
     world.add(streaks);
 
-    // 01 / HATCH — keep the strong iris from the previous version.
     const hatch = new THREE.Group();
     hatch.position.z = 3.2;
     world.add(hatch);
@@ -353,10 +350,8 @@ export default function SceneCanvas() {
     hatchBeam.position.z = -6.5;
     hatch.add(hatchBeam);
 
-    // The three new early events live inside this exact same world / camera.
     const earlyRig = createEarlyCinematicRig(world, hatch, isMobile);
 
-    // 02 / ARCHIVE HALL — fewer repeated objects, larger spatial silhouettes.
     const hall = new THREE.Group();
     world.add(hall);
 
@@ -423,7 +418,6 @@ export default function SceneCanvas() {
       hallBeams.push(beam);
     });
 
-    // 03 / ARTIFACTS — retain the existing four-object exhibition, simplified.
     const artifactGroup = new THREE.Group();
     world.add(artifactGroup);
     const artifactZ = [-25.5, -29.8, -34.1, -38.2];
@@ -481,7 +475,6 @@ export default function SceneCanvas() {
       artifactObjects.push(g);
     });
 
-    // 04 / GATEWAY — keep the final shot's structure and shader language.
     const starCount = isMobile ? 520 : 1180;
     const originalPositions = new Float32Array(starCount * 3);
     const portalTargets = new Float32Array(starCount * 3);
@@ -653,20 +646,34 @@ export default function SceneCanvas() {
       const artifactPhase = smoothstep(0.47, 0.72, progress);
       const portalMorph = smoothstep(0.79, 0.975, progress);
       const portalPulse = pulse(progress, 0.91, 0.12);
+      const hatchHold = smoothstep(0.135, 0.17, progress) * (1 - smoothstep(0.19, 0.225, progress));
+      const logicFocus = smoothstep(0.32, 0.39, progress) * (1 - smoothstep(0.53, 0.63, progress));
+      const scanPulse = pulse(progress, 0.445, 0.085) * logicFocus;
+      const openingBias = pulse(progress, 0.085, 0.085);
 
-      const pathProgress = clamp(progress + hatchCross * 0.019, 0, 1);
+      const pathProgress = clamp(
+        progress + hatchCross * 0.019 - hatchHold * 0.007 - logicFocus * 0.012,
+        0,
+        1,
+      );
       cameraPath.getPointAt(pathProgress, cameraPoint);
       cameraPath.getPointAt(Math.min(1, pathProgress + 0.035), lookPoint);
       camera.position.copy(cameraPoint);
+      camera.position.x += openingBias * 0.16;
       camera.position.x += mouseX * 0.19 * (1 - portalMorph * 0.82);
       camera.position.y -= mouseY * 0.14 * (1 - portalMorph * 0.82);
-      camera.lookAt(lookPoint.x, lookPoint.y, lookPoint.z - 1.25);
-      camera.rotation.z += Math.sin(progress * Math.PI * 4.4) * 0.009 + hatchCross * 0.014;
-      const targetFov = 48 + hatchCross * 13 + portalPulse * 5.5;
+      const directedLookX = lerp(lookPoint.x, -0.34, logicFocus * 0.42);
+      const directedLookY = lerp(lookPoint.y, 0.08, logicFocus * 0.34);
+      camera.lookAt(directedLookX, directedLookY, lookPoint.z - 1.25);
+      camera.rotation.z += Math.sin(progress * Math.PI * 4.4) * 0.007 + hatchCross * 0.014 - logicFocus * 0.005;
+      const targetFov = 48 - logicFocus * 2.7 + hatchCross * 13 + portalPulse * 5.5;
       if (Math.abs(camera.fov - targetFov) > 0.02) {
         camera.fov += (targetFov - camera.fov) * Math.min(1, dt * 7);
         camera.updateProjectionMatrix();
       }
+
+      const earlyExposure = 0.84 + hatchOpen * 0.025 + hatchCross * 0.1 + logicFocus * 0.045 + artifactPhase * 0.055;
+      renderer.toneMappingExposure = lerp(earlyExposure, 0.94, smoothstep(0.7, 0.8, progress));
 
       const time = performance.now() * 0.001;
       earlyRig.update(progress, time);
@@ -741,10 +748,10 @@ export default function SceneCanvas() {
       gatewayShardMaterial.opacity = 0.14 + portalMorph * 0.42;
 
       if (bloomPass && rgbPass && composer) {
-        bloomPass.strength = 0.18 + hatchCross * 0.95 + artifactPhase * 0.06 + portalPulse * 0.78;
-        bloomPass.radius = 0.38 + hatchCross * 0.18 + portalPulse * 0.08;
-        bloomPass.threshold = 0.68 - hatchCross * 0.18 - portalPulse * 0.12;
-        rgbPass.uniforms.amount.value = 0.00025 + hatchCross * 0.005 + portalPulse * 0.003;
+        bloomPass.strength = 0.16 + hatchCross * 0.92 + scanPulse * 0.24 + artifactPhase * 0.06 + portalPulse * 0.78;
+        bloomPass.radius = 0.37 + hatchCross * 0.17 + scanPulse * 0.04 + portalPulse * 0.08;
+        bloomPass.threshold = 0.69 - hatchCross * 0.18 - scanPulse * 0.045 - portalPulse * 0.12;
+        rgbPass.uniforms.amount.value = 0.0002 + hatchCross * 0.0048 + scanPulse * 0.00065 + portalPulse * 0.003;
         rgbPass.uniforms.angle.value = time * 0.35;
         composer.render();
       } else {
