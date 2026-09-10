@@ -6,6 +6,7 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
+import { createEarlyCinematicRig } from "./early-cinematic-rig";
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -84,45 +85,6 @@ const PORTAL_SHADER = {
   `,
 };
 
-function makeLabelTexture(title: string, detail: string) {
-  const canvas = document.createElement("canvas");
-  canvas.width = 1024;
-  canvas.height = 256;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return new THREE.CanvasTexture(canvas);
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "rgba(238,244,238,.94)";
-  ctx.font = "700 112px Arial, sans-serif";
-  ctx.letterSpacing = "-4px";
-  ctx.fillText(title, 20, 126);
-  ctx.fillStyle = "rgba(210,224,216,.54)";
-  ctx.font = "28px monospace";
-  ctx.letterSpacing = "2px";
-  ctx.fillText(detail.toUpperCase(), 24, 190);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.minFilter = THREE.LinearFilter;
-  texture.magFilter = THREE.LinearFilter;
-  texture.needsUpdate = true;
-  return texture;
-}
-
-function makeLabelPlane(title: string, detail: string, width = 5.8, height = 1.45) {
-  const texture = makeLabelTexture(title, detail);
-  const material = new THREE.MeshBasicMaterial({
-    map: texture,
-    transparent: true,
-    opacity: 0.76,
-    depthWrite: false,
-    side: THREE.DoubleSide,
-  });
-  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, height), material);
-  mesh.userData.texture = texture;
-  return mesh;
-}
-
 function makeGlowTexture() {
   const canvas = document.createElement("canvas");
   canvas.width = 256;
@@ -166,7 +128,7 @@ export default function SceneCanvas() {
     }
 
     renderer.setClearColor(0x010203, 1);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1 : 1.35));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1 : 1.25));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 0.94;
@@ -181,18 +143,18 @@ export default function SceneCanvas() {
     camera.position.set(0, 0, 12);
     scene.add(camera);
 
-    const ambient = new THREE.HemisphereLight(0xc5d4cf, 0x030506, 0.84);
+    const ambient = new THREE.HemisphereLight(0xc5d4cf, 0x030506, 0.82);
     scene.add(ambient);
 
-    const key = new THREE.DirectionalLight(0xeaf1e8, 2.7);
+    const key = new THREE.DirectionalLight(0xeaf1e8, 2.5);
     key.position.set(5, 7, 7);
     scene.add(key);
 
-    const coldRim = new THREE.PointLight(0x8eaaa7, 18, 34, 2.1);
+    const coldRim = new THREE.PointLight(0x8eaaa7, 15, 33, 2.1);
     coldRim.position.set(-4, 1, -8);
     scene.add(coldRim);
 
-    const goldRim = new THREE.PointLight(0x92744c, 8.5, 26, 2.2);
+    const goldRim = new THREE.PointLight(0x92744c, 7.5, 26, 2.2);
     goldRim.position.set(4, -1.5, -27);
     scene.add(goldRim);
 
@@ -208,11 +170,11 @@ export default function SceneCanvas() {
       depthWrite: false,
     });
 
-    // --- 00 / DEEP FIELD ----------------------------------------------------
-    const farStarCount = isMobile ? 620 : 1450;
+    // Deep field: enough depth to feel alive, but fewer particles than before.
+    const farStarCount = isMobile ? 420 : 920;
     const farPositions = new Float32Array(farStarCount * 3);
     for (let i = 0; i < farStarCount; i += 1) {
-      const spread = 8 + Math.random() * 18;
+      const spread = 9 + Math.random() * 17;
       farPositions[i * 3] = (Math.random() - 0.5) * spread;
       farPositions[i * 3 + 1] = (Math.random() - 0.5) * spread * 0.72;
       farPositions[i * 3 + 2] = 16 - Math.random() * 78;
@@ -223,15 +185,14 @@ export default function SceneCanvas() {
       color: 0x90aaa3,
       size: isMobile ? 0.014 : 0.019,
       transparent: true,
-      opacity: 0.34,
+      opacity: 0.31,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
     });
     const farStars = new THREE.Points(farGeometry, farMaterial);
     world.add(farStars);
 
-    // Near particles create foreground parallax and give the frame some "air".
-    const nearCount = isMobile ? 180 : 420;
+    const nearCount = isMobile ? 90 : 220;
     const nearPositions = new Float32Array(nearCount * 3);
     for (let i = 0; i < nearCount; i += 1) {
       nearPositions[i * 3] = (Math.random() - 0.5) * 13;
@@ -242,17 +203,17 @@ export default function SceneCanvas() {
     nearGeometry.setAttribute("position", new THREE.BufferAttribute(nearPositions, 3));
     const nearMaterial = new THREE.PointsMaterial({
       color: 0xdce9df,
-      size: isMobile ? 0.028 : 0.045,
+      size: isMobile ? 0.026 : 0.041,
       transparent: true,
-      opacity: 0.22,
+      opacity: 0.18,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
     });
     const nearDust = new THREE.Points(nearGeometry, nearMaterial);
     world.add(nearDust);
 
-    // One draw call of speed streaks becomes visible only during transitions.
-    const streakCount = isMobile ? 42 : 90;
+    // Transition streaks are one line-segment draw call.
+    const streakCount = isMobile ? 28 : 58;
     const streakPositions = new Float32Array(streakCount * 6);
     for (let i = 0; i < streakCount; i += 1) {
       const angle = Math.random() * Math.PI * 2;
@@ -280,7 +241,7 @@ export default function SceneCanvas() {
     const streaks = new THREE.LineSegments(streakGeometry, streakMaterial);
     world.add(streaks);
 
-    // --- 01 / THE HATCH -----------------------------------------------------
+    // 01 / HATCH — keep the strong iris from the previous version.
     const hatch = new THREE.Group();
     hatch.position.z = 3.2;
     world.add(hatch);
@@ -290,13 +251,13 @@ export default function SceneCanvas() {
       roughness: 0.31,
       metalness: 0.9,
     });
-    const outerRing = new THREE.Mesh(new THREE.TorusGeometry(4.45, 0.18, 12, 120), outerRingMaterial);
+    const outerRing = new THREE.Mesh(new THREE.TorusGeometry(4.45, 0.18, 10, 96), outerRingMaterial);
     hatch.add(outerRing);
 
     const ringLayers: THREE.Mesh[] = [];
     [4.72, 4.16, 3.82].forEach((radius, index) => {
       const layer = new THREE.Mesh(
-        new THREE.TorusGeometry(radius, index === 0 ? 0.045 : 0.024, 8, 120),
+        new THREE.TorusGeometry(radius, index === 0 ? 0.045 : 0.024, 6, 96),
         new THREE.MeshBasicMaterial({
           color: index === 2 ? 0xb5966d : 0xb8c6c1,
           transparent: true,
@@ -315,7 +276,7 @@ export default function SceneCanvas() {
       opacity: 0.12,
       depthWrite: false,
     });
-    const innerGlow = new THREE.Mesh(new THREE.TorusGeometry(3.65, 0.045, 8, 120), innerGlowMaterial);
+    const innerGlow = new THREE.Mesh(new THREE.TorusGeometry(3.65, 0.045, 6, 96), innerGlowMaterial);
     hatch.add(innerGlow);
 
     const hatchFlare = new THREE.Sprite(glowMaterial.clone());
@@ -326,11 +287,10 @@ export default function SceneCanvas() {
 
     const tickGeometry = new THREE.BoxGeometry(0.07, 0.48, 0.08);
     const tickMaterial = new THREE.MeshBasicMaterial({ color: 0xb9c5c0, transparent: true, opacity: 0.28 });
-    const tickCount = 32;
-    const hatchTicks = new THREE.InstancedMesh(tickGeometry, tickMaterial, tickCount);
+    const hatchTicks = new THREE.InstancedMesh(tickGeometry, tickMaterial, 24);
     const tickDummy = new THREE.Object3D();
-    for (let i = 0; i < tickCount; i += 1) {
-      const a = (i / tickCount) * Math.PI * 2;
+    for (let i = 0; i < 24; i += 1) {
+      const a = (i / 24) * Math.PI * 2;
       tickDummy.position.set(Math.cos(a) * 4.05, Math.sin(a) * 4.05, 0.03);
       tickDummy.rotation.set(0, 0, a);
       tickDummy.updateMatrix();
@@ -338,21 +298,6 @@ export default function SceneCanvas() {
     }
     hatchTicks.instanceMatrix.needsUpdate = true;
     hatch.add(hatchTicks);
-
-    const spokeGeometry = new THREE.BoxGeometry(0.035, 1.1, 0.04);
-    const spokeMaterial = new THREE.MeshBasicMaterial({ color: 0x7c8d89, transparent: true, opacity: 0.12 });
-    const spokeCount = 16;
-    const spokes = new THREE.InstancedMesh(spokeGeometry, spokeMaterial, spokeCount);
-    const spokeDummy = new THREE.Object3D();
-    for (let i = 0; i < spokeCount; i += 1) {
-      const a = (i / spokeCount) * Math.PI * 2;
-      spokeDummy.position.set(Math.cos(a) * 4.94, Math.sin(a) * 4.94, -0.08);
-      spokeDummy.rotation.set(0, 0, a);
-      spokeDummy.updateMatrix();
-      spokes.setMatrixAt(i, spokeDummy.matrix);
-    }
-    spokes.instanceMatrix.needsUpdate = true;
-    hatch.add(spokes);
 
     const bladeShape = new THREE.Shape();
     bladeShape.moveTo(0.18, -0.92);
@@ -380,13 +325,13 @@ export default function SceneCanvas() {
     });
     const bladeEdges = new THREE.EdgesGeometry(bladeGeometry, 18);
     const blades: Array<{ group: THREE.Group; angle: number }> = [];
-
     for (let i = 0; i < 8; i += 1) {
       const angle = (i / 8) * Math.PI * 2;
       const group = new THREE.Group();
-      const mesh = new THREE.Mesh(bladeGeometry, bladeMaterial);
-      const edge = new THREE.LineSegments(bladeEdges, bladeEdgeMaterial);
-      group.add(mesh, edge);
+      group.add(
+        new THREE.Mesh(bladeGeometry, bladeMaterial),
+        new THREE.LineSegments(bladeEdges, bladeEdgeMaterial),
+      );
       group.rotation.z = angle;
       hatch.add(group);
       blades.push({ group, angle });
@@ -401,23 +346,26 @@ export default function SceneCanvas() {
       side: THREE.DoubleSide,
     });
     const hatchBeam = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.55, 3.8, 14, 32, 1, true),
+      new THREE.CylinderGeometry(0.55, 3.8, 14, 24, 1, true),
       hatchBeamMaterial,
     );
     hatchBeam.rotation.x = Math.PI / 2;
     hatchBeam.position.z = -6.5;
     hatch.add(hatchBeam);
 
-    // --- 02 / ARCHIVE HALL --------------------------------------------------
+    // The three new early events live inside this exact same world / camera.
+    const earlyRig = createEarlyCinematicRig(world, hatch, isMobile);
+
+    // 02 / ARCHIVE HALL — fewer repeated objects, larger spatial silhouettes.
     const hall = new THREE.Group();
     world.add(hall);
 
-    const floorGrid = new THREE.GridHelper(74, 58, 0x6f817d, 0x26302f);
+    const floorGrid = new THREE.GridHelper(74, 48, 0x6f817d, 0x26302f);
     floorGrid.position.set(0, -3.1, -25);
     const floorMaterials = Array.isArray(floorGrid.material) ? floorGrid.material : [floorGrid.material];
     floorMaterials.forEach((material) => {
       material.transparent = true;
-      material.opacity = 0.18;
+      material.opacity = 0.15;
       material.depthWrite = false;
     });
     hall.add(floorGrid);
@@ -425,104 +373,67 @@ export default function SceneCanvas() {
     const frameMaterial = new THREE.LineBasicMaterial({
       color: 0x8fa19c,
       transparent: true,
-      opacity: 0.14,
+      opacity: 0.12,
     });
     const frameGeometry = new THREE.EdgesGeometry(new THREE.BoxGeometry(10.8, 6.8, 0.08));
-    for (let i = 0; i < 12; i += 1) {
+    const hallFrames: THREE.LineSegments[] = [];
+    for (let i = 0; i < 9; i += 1) {
       const frame = new THREE.LineSegments(frameGeometry, frameMaterial);
-      frame.position.set(Math.sin(i * 0.62) * 0.72, Math.cos(i * 0.47) * 0.22, -6.8 - i * 3.55);
+      frame.position.set(Math.sin(i * 0.62) * 0.72, Math.cos(i * 0.47) * 0.22, -7.2 - i * 4.1);
       frame.rotation.z = Math.sin(i * 0.7) * 0.026;
       hall.add(frame);
+      hallFrames.push(frame);
     }
 
-    // Tall side architecture creates foreground wipes when the camera moves laterally.
+    const monolithGeometry = new THREE.BoxGeometry(0.76, 7.6, 1.45);
     const monolithMaterial = new THREE.MeshStandardMaterial({
-      color: 0x18211f,
-      roughness: 0.7,
-      metalness: 0.45,
-      transparent: true,
-      opacity: 0.72,
+      color: 0x17201f,
+      roughness: 0.68,
+      metalness: 0.5,
     });
-    const monolithGeometry = new THREE.BoxGeometry(0.72, 7.4, 1.35);
-    const monoliths: THREE.Mesh[] = [];
-    for (let i = 0; i < 10; i += 1) {
-      [-1, 1].forEach((side) => {
-        const monolith = new THREE.Mesh(monolithGeometry, monolithMaterial.clone());
-        monolith.position.set(side * (5.2 + (i % 2) * 0.55), -0.05 + Math.sin(i) * 0.35, -9.5 - i * 3.6);
-        monolith.rotation.y = side * (0.08 + (i % 3) * 0.035);
-        hall.add(monolith);
-        monoliths.push(monolith);
+    const monoliths = new THREE.InstancedMesh(monolithGeometry, monolithMaterial, 12);
+    const monoDummy = new THREE.Object3D();
+    for (let i = 0; i < 6; i += 1) {
+      [-1, 1].forEach((side, sideIndex) => {
+        const index = i * 2 + sideIndex;
+        monoDummy.position.set(side * (5.25 + (i % 2) * 0.55), Math.sin(i) * 0.3, -10.5 - i * 5.1);
+        monoDummy.rotation.set(0, side * (0.09 + (i % 3) * 0.035), 0);
+        monoDummy.updateMatrix();
+        monoliths.setMatrixAt(index, monoDummy.matrix);
       });
     }
-
-    const arcMaterial = new THREE.MeshBasicMaterial({
-      color: 0xa3b5af,
-      transparent: true,
-      opacity: 0.12,
-      depthWrite: false,
-    });
-    const dataArcs: THREE.Mesh[] = [];
-    for (let i = 0; i < 7; i += 1) {
-      const arc = new THREE.Mesh(
-        new THREE.TorusGeometry(3.8 + (i % 3) * 0.5, 0.025, 6, 64, Math.PI * (0.72 + (i % 2) * 0.18)),
-        arcMaterial.clone(),
-      );
-      arc.position.set(i % 2 === 0 ? 2.1 : -2.3, i % 3 === 0 ? 0.8 : -0.4, -11.5 - i * 4.5);
-      arc.rotation.set(Math.PI / 2 + 0.2, i * 0.17, i * 0.36);
-      hall.add(arc);
-      dataArcs.push(arc);
-    }
-
-    const identityLabels = [
-      { title: "BUILD", detail: "turn ambiguity into a working system", position: [2.4, 0.85, -12.5] as const },
-      { title: "MEASURE", detail: "replace confidence with evidence", position: [-2.15, -0.25, -17.2] as const },
-      { title: "SHIP", detail: "keep the loop moving in reality", position: [2.05, 0.15, -21.7] as const },
-    ];
-    const labelPlanes: THREE.Mesh[] = [];
-    identityLabels.forEach((item, index) => {
-      const label = makeLabelPlane(item.title, item.detail, 5.7, 1.42);
-      label.position.set(item.position[0], item.position[1], item.position[2]);
-      label.rotation.y = index % 2 === 0 ? -0.24 : 0.24;
-      hall.add(label);
-      labelPlanes.push(label);
-    });
+    monoliths.instanceMatrix.needsUpdate = true;
+    hall.add(monoliths);
 
     const beamMaterial = new THREE.MeshBasicMaterial({
       color: 0x8da9a4,
       transparent: true,
-      opacity: 0.035,
+      opacity: 0.025,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
     });
-    const beamGeometry = new THREE.ConeGeometry(3.2, 15, 24, 1, true);
     const hallBeams: THREE.Mesh[] = [];
-    const beamSpecs: Array<[number, number, number, number]> = [
-      [-4.2, 3.8, -13, 0.34],
-      [4.5, 4.1, -24, -0.35],
-      [-3.4, 3.6, -35, 0.25],
-      [3.2, 4.4, -42, -0.2],
-    ];
-    beamSpecs.forEach(([x, y, z, rz]) => {
+    const beamGeometry = new THREE.ConeGeometry(3.2, 15, 18, 1, true);
+    [[-4.2, 3.8, -13, 0.34], [4.5, 4.1, -25, -0.35], [-3.4, 3.6, -37, 0.25]].forEach((spec) => {
       const beam = new THREE.Mesh(beamGeometry, beamMaterial.clone());
-      beam.position.set(x, y, z);
-      beam.rotation.z = rz;
-      beam.rotation.x = 0.16;
+      beam.position.set(spec[0], spec[1], spec[2]);
+      beam.rotation.set(0.16, 0, spec[3]);
       hall.add(beam);
       hallBeams.push(beam);
     });
 
-    // --- 03 / ARTIFACTS -----------------------------------------------------
+    // 03 / ARTIFACTS — retain the existing four-object exhibition, simplified.
     const artifactGroup = new THREE.Group();
     world.add(artifactGroup);
     const artifactZ = [-25.5, -29.8, -34.1, -38.2];
     const artifactObjects: THREE.Group[] = [];
     const artifactLights: THREE.PointLight[] = [];
     const artifactGeometries: THREE.BufferGeometry[] = [
-      new THREE.IcosahedronGeometry(1.12, 2),
-      new THREE.TorusKnotGeometry(0.78, 0.22, 84, 10, 2, 3),
-      new THREE.DodecahedronGeometry(1.08, 1),
-      new THREE.OctahedronGeometry(1.2, 2),
+      new THREE.IcosahedronGeometry(1.12, 1),
+      new THREE.TorusKnotGeometry(0.78, 0.22, 64, 8, 2, 3),
+      new THREE.DodecahedronGeometry(1.08, 0),
+      new THREE.OctahedronGeometry(1.2, 1),
     ];
 
     artifactZ.forEach((z, index) => {
@@ -541,60 +452,22 @@ export default function SceneCanvas() {
 
       const wire = new THREE.LineSegments(
         new THREE.EdgesGeometry(artifactGeometries[index], 18),
-        new THREE.LineBasicMaterial({ color: 0xe3ebe4, transparent: true, opacity: 0.4 }),
+        new THREE.LineBasicMaterial({ color: 0xe3ebe4, transparent: true, opacity: 0.38 }),
       );
       wire.scale.setScalar(1.04);
       g.add(wire);
 
-      const haloA = new THREE.Mesh(
-        new THREE.TorusGeometry(1.8, 0.025, 6, 72),
-        new THREE.MeshBasicMaterial({ color: 0xc8d5d0, transparent: true, opacity: 0.25 }),
+      const halo = new THREE.Mesh(
+        new THREE.TorusGeometry(1.8, 0.025, 6, 56),
+        new THREE.MeshBasicMaterial({ color: 0xc8d5d0, transparent: true, opacity: 0.23 }),
       );
-      haloA.rotation.x = Math.PI / 2;
-      g.add(haloA);
-
-      const haloB = haloA.clone();
-      haloB.rotation.set(Math.PI / 2, 0.7, 0.3);
-      haloB.scale.setScalar(0.77);
-      g.add(haloB);
-
-      const pedestal = new THREE.Mesh(
-        new THREE.CylinderGeometry(1.5, 1.72, 0.16, 48),
-        new THREE.MeshStandardMaterial({
-          color: 0x28302e,
-          roughness: 0.55,
-          metalness: 0.62,
-          transparent: true,
-          opacity: 0.68,
-        }),
-      );
-      pedestal.position.y = -2.04;
-      g.add(pedestal);
-
-      const column = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.5, 1.25, 4.2, 32, 1, true),
-        new THREE.MeshBasicMaterial({
-          color: index === 2 ? 0x9d7e58 : 0x779d94,
-          transparent: true,
-          opacity: 0.026,
-          blending: THREE.AdditiveBlending,
-          depthWrite: false,
-          side: THREE.DoubleSide,
-        }),
-      );
-      column.position.y = -0.8;
-      g.add(column);
-
-      const label = makeLabelPlane(`A-0${index + 1}`, ["HUMAN AI", "AI COLLAB", "SIGNALS", "AI NETWORK"][index], 2.7, 0.66);
-      label.position.set(0, -2.45, 0.2);
-      label.material = (label.material as THREE.MeshBasicMaterial).clone();
-      (label.material as THREE.MeshBasicMaterial).opacity = 0.45;
-      g.add(label);
+      halo.rotation.x = Math.PI / 2;
+      g.add(halo);
 
       const flare = new THREE.Sprite(glowMaterial.clone());
       flare.position.set(0, 0, -0.6);
-      flare.scale.set(3.4, 3.4, 1);
-      (flare.material as THREE.SpriteMaterial).opacity = 0.08;
+      flare.scale.set(3.2, 3.2, 1);
+      (flare.material as THREE.SpriteMaterial).opacity = 0.07;
       g.add(flare);
 
       const light = new THREE.PointLight(index === 2 ? 0xb08b5d : 0x85b3aa, 1.2, 8.5, 2.1);
@@ -602,24 +475,14 @@ export default function SceneCanvas() {
       g.add(light);
       artifactLights.push(light);
 
-      for (let satelliteIndex = 0; satelliteIndex < 3; satelliteIndex += 1) {
-        const satellite = new THREE.Mesh(
-          new THREE.SphereGeometry(0.055 + satelliteIndex * 0.01, 10, 10),
-          new THREE.MeshBasicMaterial({ color: 0xdde8e2, transparent: true, opacity: 0.58 }),
-        );
-        satellite.userData.phase = satelliteIndex * 2.1 + index * 0.4;
-        satellite.userData.radius = 2.0 + satelliteIndex * 0.22;
-        g.add(satellite);
-      }
-
       g.position.set(index % 2 === 0 ? 2.45 : -2.35, index % 3 === 0 ? 0.55 : -0.25, z);
       g.rotation.z = index % 2 === 0 ? 0.08 : -0.08;
       artifactGroup.add(g);
       artifactObjects.push(g);
     });
 
-    // --- 04 / PARTICLES + GATEWAY ------------------------------------------
-    const starCount = isMobile ? 620 : 1420;
+    // 04 / GATEWAY — keep the final shot's structure and shader language.
+    const starCount = isMobile ? 520 : 1180;
     const originalPositions = new Float32Array(starCount * 3);
     const portalTargets = new Float32Array(starCount * 3);
     const workingPositions = new Float32Array(starCount * 3);
@@ -661,7 +524,7 @@ export default function SceneCanvas() {
     const gatewayRings: THREE.Mesh[] = [];
     [3.55, 3.18, 2.9, 2.62].forEach((radius, index) => {
       const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(radius, index === 0 ? 0.075 : 0.03, 8, 128),
+        new THREE.TorusGeometry(radius, index === 0 ? 0.075 : 0.03, 8, 112),
         new THREE.MeshBasicMaterial({
           color: index === 2 ? 0xb49368 : 0xe4eee6,
           transparent: true,
@@ -683,7 +546,7 @@ export default function SceneCanvas() {
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
     });
-    const portalDisc = new THREE.Mesh(new THREE.CircleGeometry(2.58, 96), portalMaterial);
+    const portalDisc = new THREE.Mesh(new THREE.CircleGeometry(2.58, 80), portalMaterial);
     portalDisc.position.z = 0.02;
     gateway.add(portalDisc);
 
@@ -711,19 +574,18 @@ export default function SceneCanvas() {
     }
     gatewayShards.instanceMatrix.needsUpdate = true;
     gateway.add(gatewayShards);
-
     gateway.position.z = -48;
     world.add(gateway);
 
     const cameraPath = new THREE.CatmullRomCurve3(
       [
         new THREE.Vector3(0, 0, 12),
-        new THREE.Vector3(0.05, 0.05, 7.1),
+        new THREE.Vector3(-0.2, 0.05, 7.5),
         new THREE.Vector3(0.12, 0.08, 3.65),
         new THREE.Vector3(0.42, 0.2, -4.8),
-        new THREE.Vector3(1.65, 0.72, -12.3),
-        new THREE.Vector3(-1.9, 0.12, -20.2),
-        new THREE.Vector3(2.45, -0.35, -29.6),
+        new THREE.Vector3(1.55, 0.72, -12.3),
+        new THREE.Vector3(-1.7, 0.12, -20.2),
+        new THREE.Vector3(2.35, -0.35, -29.6),
         new THREE.Vector3(-1.8, 0.58, -38.2),
         new THREE.Vector3(0.15, 0.1, -46.2),
         new THREE.Vector3(0, 0, -47.25),
@@ -739,17 +601,15 @@ export default function SceneCanvas() {
     if (!isMobile && !reducedMotion) {
       composer = new EffectComposer(renderer);
       composer.addPass(new RenderPass(scene, camera));
-      bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.28, 0.58, 0.7);
+      bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.25, 0.54, 0.7);
       composer.addPass(bloomPass);
       rgbPass = new ShaderPass(RGB_SHIFT_SHADER);
       composer.addPass(rgbPass);
     }
 
-    let width = 0;
-    let height = 0;
     const resize = () => {
-      width = window.innerWidth;
-      height = window.innerHeight;
+      const width = window.innerWidth;
+      const height = window.innerHeight;
       camera.aspect = Math.max(0.1, width / Math.max(1, height));
       camera.updateProjectionMatrix();
       renderer.setSize(width, height, false);
@@ -798,10 +658,10 @@ export default function SceneCanvas() {
       cameraPath.getPointAt(pathProgress, cameraPoint);
       cameraPath.getPointAt(Math.min(1, pathProgress + 0.035), lookPoint);
       camera.position.copy(cameraPoint);
-      camera.position.x += mouseX * 0.22 * (1 - portalMorph * 0.82);
-      camera.position.y -= mouseY * 0.16 * (1 - portalMorph * 0.82);
+      camera.position.x += mouseX * 0.19 * (1 - portalMorph * 0.82);
+      camera.position.y -= mouseY * 0.14 * (1 - portalMorph * 0.82);
       camera.lookAt(lookPoint.x, lookPoint.y, lookPoint.z - 1.25);
-      camera.rotation.z += Math.sin(progress * Math.PI * 4.4) * 0.01 + hatchCross * 0.014;
+      camera.rotation.z += Math.sin(progress * Math.PI * 4.4) * 0.009 + hatchCross * 0.014;
       const targetFov = 48 + hatchCross * 13 + portalPulse * 5.5;
       if (Math.abs(camera.fov - targetFov) > 0.02) {
         camera.fov += (targetFov - camera.fov) * Math.min(1, dt * 7);
@@ -809,12 +669,14 @@ export default function SceneCanvas() {
       }
 
       const time = performance.now() * 0.001;
+      earlyRig.update(progress, time);
+
       farStars.rotation.z = time * 0.0025;
       nearDust.rotation.z = -time * 0.0055;
-      nearDust.position.x = mouseX * -0.14;
-      nearDust.position.y = mouseY * 0.1;
-      nearMaterial.opacity = 0.16 + logicPhase * 0.08 + portalMorph * 0.08;
-      streakMaterial.opacity = hatchCross * 0.42 + portalPulse * 0.28;
+      nearDust.position.x = mouseX * -0.12;
+      nearDust.position.y = mouseY * 0.09;
+      nearMaterial.opacity = 0.14 + logicPhase * 0.07 + portalMorph * 0.08;
+      streakMaterial.opacity = hatchCross * 0.4 + portalPulse * 0.27;
       streaks.position.z = hatchCross * -1.8 + portalPulse * -1.1;
 
       blades.forEach(({ group, angle }, index) => {
@@ -825,7 +687,6 @@ export default function SceneCanvas() {
       });
       outerRing.rotation.z = time * 0.025;
       hatchTicks.rotation.z = -time * 0.036;
-      spokes.rotation.z = time * 0.018;
       ringLayers.forEach((ring, index) => {
         ring.rotation.z += (index % 2 === 0 ? 1 : -1) * dt * (0.016 + index * 0.009);
         const material = ring.material as THREE.MeshBasicMaterial;
@@ -837,21 +698,12 @@ export default function SceneCanvas() {
       (hatchFlare.material as THREE.SpriteMaterial).opacity = 0.04 + hatchOpen * 0.08 + hatchCross * 0.32;
       hatchFlare.scale.setScalar(7.6 + hatchCross * 2.4);
 
-      labelPlanes.forEach((label, index) => {
-        label.rotation.y += Math.sin(time * 0.3 + index) * dt * 0.004;
-        const material = label.material as THREE.MeshBasicMaterial;
-        material.opacity = 0.28 + Math.max(0, 1 - Math.abs(camera.position.z - label.position.z) / 9) * 0.58;
+      hallFrames.forEach((frame, index) => {
+        frame.rotation.z += Math.sin(time * 0.18 + index) * dt * 0.0015;
       });
       hallBeams.forEach((beam, index) => {
         const material = beam.material as THREE.MeshBasicMaterial;
-        material.opacity = 0.016 + Math.sin(time * 0.34 + index) * 0.006 + artifactPhase * 0.018;
-      });
-      dataArcs.forEach((arc, index) => {
-        arc.rotation.z += (index % 2 === 0 ? 1 : -1) * dt * 0.018;
-        (arc.material as THREE.MeshBasicMaterial).opacity = 0.07 + logicPhase * 0.08 + Math.sin(time * 0.32 + index) * 0.02;
-      });
-      monoliths.forEach((monolith, index) => {
-        monolith.position.y += Math.sin(time * 0.16 + index) * dt * 0.004;
+        material.opacity = 0.012 + Math.sin(time * 0.34 + index) * 0.005 + artifactPhase * 0.014;
       });
 
       artifactObjects.forEach((obj, index) => {
@@ -861,15 +713,7 @@ export default function SceneCanvas() {
         const focus = Math.max(0, 1 - distance / 8.5);
         const scale = 0.78 + focus * 0.45;
         obj.scale.setScalar(scale);
-        obj.position.x += Math.sin(time * 0.25 + index) * dt * 0.012;
-        artifactLights[index].intensity = 0.35 + focus * 5.4;
-        obj.children.forEach((child) => {
-          if (child.userData.radius) {
-            const phase = Number(child.userData.phase) + time * (0.42 + index * 0.06);
-            const radius = Number(child.userData.radius);
-            child.position.set(Math.cos(phase) * radius, Math.sin(phase * 1.13) * radius * 0.62, Math.sin(phase) * 0.42);
-          }
-        });
+        artifactLights[index].intensity = 0.35 + focus * 5.0;
       });
 
       if (portalMorph > 0.001) {
@@ -897,10 +741,10 @@ export default function SceneCanvas() {
       gatewayShardMaterial.opacity = 0.14 + portalMorph * 0.42;
 
       if (bloomPass && rgbPass && composer) {
-        bloomPass.strength = 0.2 + hatchCross * 1.0 + artifactPhase * 0.08 + portalPulse * 0.78;
-        bloomPass.radius = 0.4 + hatchCross * 0.2 + portalPulse * 0.08;
-        bloomPass.threshold = 0.66 - hatchCross * 0.19 - portalPulse * 0.12;
-        rgbPass.uniforms.amount.value = 0.00035 + hatchCross * 0.0055 + portalPulse * 0.003;
+        bloomPass.strength = 0.18 + hatchCross * 0.95 + artifactPhase * 0.06 + portalPulse * 0.78;
+        bloomPass.radius = 0.38 + hatchCross * 0.18 + portalPulse * 0.08;
+        bloomPass.threshold = 0.68 - hatchCross * 0.18 - portalPulse * 0.12;
+        rgbPass.uniforms.amount.value = 0.00025 + hatchCross * 0.005 + portalPulse * 0.003;
         rgbPass.uniforms.angle.value = time * 0.35;
         composer.render();
       } else {
@@ -936,39 +780,25 @@ export default function SceneCanvas() {
       window.removeEventListener("pointermove", onPointerMove);
       document.removeEventListener("visibilitychange", onVisibility);
 
-      const disposeObject = (object: THREE.Object3D) => {
-        object.traverse((child) => {
-          if (
-            child instanceof THREE.Mesh ||
-            child instanceof THREE.LineSegments ||
-            child instanceof THREE.Points ||
-            child instanceof THREE.Sprite ||
-            child instanceof THREE.InstancedMesh
-          ) {
-            child.geometry?.dispose?.();
-            const material = child.material as THREE.Material | THREE.Material[];
-            const materials = Array.isArray(material) ? material : [material];
-            materials.forEach((item) => {
-              const map = (item as THREE.MeshBasicMaterial).map;
-              map?.dispose();
-              item.dispose();
-            });
-          }
-        });
-      };
-      disposeObject(world);
+      world.traverse((child) => {
+        if (
+          child instanceof THREE.Mesh ||
+          child instanceof THREE.LineSegments ||
+          child instanceof THREE.Points ||
+          child instanceof THREE.Sprite ||
+          child instanceof THREE.InstancedMesh
+        ) {
+          child.geometry?.dispose?.();
+          const material = child.material as THREE.Material | THREE.Material[];
+          const materials = Array.isArray(material) ? material : [material];
+          materials.forEach((item) => {
+            const map = (item as THREE.MeshBasicMaterial).map;
+            map?.dispose();
+            item.dispose();
+          });
+        }
+      });
       glowTexture.dispose();
-      farGeometry.dispose();
-      nearGeometry.dispose();
-      streakGeometry.dispose();
-      tickGeometry.dispose();
-      spokeGeometry.dispose();
-      bladeEdges.dispose();
-      frameGeometry.dispose();
-      monolithGeometry.dispose();
-      beamGeometry.dispose();
-      gatewayShardGeometry.dispose();
-      artifactGeometries.forEach((geometry) => geometry.dispose());
       composer?.dispose();
       renderer.dispose();
       renderer.domElement.remove();
