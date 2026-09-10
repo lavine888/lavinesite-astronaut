@@ -168,6 +168,403 @@
   letter-spacing: .15em;
 }
 
+/* Early scenes deliberately carry more foreground / midground density.
+   They disappear before Artifacts and Gateway so the final shot stays clean. */
+.earlyWorld {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  overflow: hidden;
+  pointer-events: none;
+  perspective: 1200px;
+  transform-style: preserve-3d;
+}
+
+.originRig,
+.thresholdRig,
+.logicRig {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity .58s ease, transform .85s cubic-bezier(.2,.72,.16,1);
+  will-change: opacity, transform;
+}
+
+.stageBoost[data-scene="0"] .originRig,
+.stageBoost[data-scene="1"] .thresholdRig,
+.stageBoost[data-scene="2"] .logicRig {
+  opacity: 1;
+}
+
+.originRig {
+  transform: translate3d(calc(var(--drift-x) * -.35), calc(var(--drift-y) * .24), 0) scale(.96);
+}
+.stageBoost[data-scene="0"] .originRig {
+  transform: translate3d(calc(var(--drift-x) * -.35), calc(var(--drift-y) * .24), 0) scale(1);
+}
+
+.orbit {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  border: 1px solid rgba(193,218,208,.13);
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 42px rgba(122,174,163,.018),
+    0 0 34px rgba(133,185,175,.015);
+  mix-blend-mode: screen;
+  transform-style: preserve-3d;
+}
+
+.orbit::before,
+.orbit::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+}
+.orbit::before {
+  inset: -5px;
+  border-top: 1px solid rgba(225,236,230,.25);
+  border-right: 1px solid transparent;
+  border-bottom: 1px solid transparent;
+  border-left: 1px solid rgba(181,143,91,.12);
+}
+.orbit::after {
+  left: 50%;
+  top: -4px;
+  width: 7px;
+  height: 7px;
+  background: rgba(219,235,226,.68);
+  box-shadow: 0 0 18px rgba(159,210,198,.55);
+  transform: translateX(-50%);
+}
+
+.orbitA {
+  width: min(62vw, 760px);
+  height: min(62vw, 760px);
+  transform: translate(-50%, -50%) rotateX(69deg) rotateZ(8deg);
+  animation: orbitA 22s linear infinite;
+}
+.orbitB {
+  width: min(45vw, 560px);
+  height: min(45vw, 560px);
+  border-color: rgba(187,151,105,.12);
+  transform: translate(-50%, -50%) rotateX(63deg) rotateY(18deg) rotateZ(-28deg);
+  animation: orbitB 17s linear infinite reverse;
+}
+.orbitC {
+  width: min(31vw, 390px);
+  height: min(31vw, 390px);
+  border-style: dashed;
+  border-color: rgba(220,231,226,.17);
+  transform: translate(-50%, -50%) rotateX(72deg) rotateY(-12deg) rotateZ(52deg);
+  animation: orbitC 13s linear infinite;
+}
+
+.originCore {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  display: grid;
+  place-items: center;
+  width: 126px;
+  height: 126px;
+  padding: 18px;
+  border: 1px solid rgba(220,235,228,.16);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(153,204,192,.095), rgba(2,4,5,.2) 48%, rgba(2,4,5,.04) 70%);
+  box-shadow: 0 0 80px rgba(133,187,176,.055);
+  transform: translate(-50%, -50%) translate3d(calc(var(--drift-x) * .16), calc(var(--drift-y) * -.14), 0);
+  text-align: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.originCore span,
+.originCore small {
+  color: rgba(255,255,255,.3);
+  font-size: 6px;
+  letter-spacing: .18em;
+}
+.originCore b {
+  color: rgba(237,244,239,.82);
+  font-size: 18px;
+  line-height: 1;
+  letter-spacing: .08em;
+}
+
+.originSlab {
+  position: absolute;
+  top: 26%;
+  width: clamp(150px, 15vw, 230px);
+  min-height: 92px;
+  padding: 14px 16px;
+  display: grid;
+  align-content: space-between;
+  border-top: 1px solid rgba(255,255,255,.15);
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  background: linear-gradient(115deg, rgba(14,21,22,.25), rgba(4,7,8,.015));
+  backdrop-filter: blur(2px);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-transform: uppercase;
+  transform-style: preserve-3d;
+}
+.originSlab span {
+  color: rgba(255,255,255,.25);
+  font-size: 6px;
+  letter-spacing: .2em;
+}
+.originSlab b {
+  color: rgba(236,242,238,.65);
+  font-size: 18px;
+  letter-spacing: .08em;
+  font-weight: 500;
+}
+.originSlab i {
+  display: block;
+  width: 44%;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(180,218,206,.5), transparent);
+}
+.slabLeft {
+  left: 5vw;
+  transform: translate3d(calc(var(--drift-x) * -.85), calc(var(--drift-y) * -.3), 20px) rotateY(24deg) rotateZ(-2deg);
+}
+.slabRight {
+  right: 6vw;
+  top: 60%;
+  text-align: right;
+  transform: translate3d(calc(var(--drift-x) * .7), calc(var(--drift-y) * .35), 10px) rotateY(-22deg) rotateZ(2deg);
+}
+.slabRight i { margin-left: auto; transform: rotate(180deg); }
+
+.thresholdRig {
+  transform: scale(.94) translate3d(calc(var(--drift-x) * .18), calc(var(--drift-y) * -.18), 0);
+}
+.stageBoost[data-scene="1"] .thresholdRig {
+  transform: scale(1) translate3d(calc(var(--drift-x) * .18), calc(var(--drift-y) * -.18), 0);
+}
+
+.thresholdRing {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  border-radius: 50%;
+  border: 1px solid rgba(218,232,225,.12);
+  transform: translate(-50%, -50%);
+  mix-blend-mode: screen;
+}
+.thresholdRing::after {
+  content: "";
+  position: absolute;
+  inset: 7%;
+  border-radius: inherit;
+  border: 1px dashed rgba(170,205,195,.09);
+}
+.thresholdRingA {
+  width: min(72vw, 880px);
+  height: min(72vw, 880px);
+  animation: sealSpin 26s linear infinite;
+}
+.thresholdRingB {
+  width: min(53vw, 650px);
+  height: min(53vw, 650px);
+  border-color: rgba(190,150,100,.14);
+  animation: sealSpin 18s linear infinite reverse;
+}
+.thresholdRingC {
+  width: min(36vw, 440px);
+  height: min(36vw, 440px);
+  border-width: 2px 1px 1px;
+  animation: sealSpin 12s linear infinite;
+}
+
+.thresholdAxis {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  opacity: .32;
+  background: linear-gradient(90deg, transparent, rgba(218,233,226,.26), transparent);
+}
+.axisHorizontal {
+  width: min(74vw, 920px);
+  height: 1px;
+  transform: translate(-50%, -50%);
+}
+.axisVertical {
+  width: 1px;
+  height: min(72vh, 720px);
+  background: linear-gradient(180deg, transparent, rgba(218,233,226,.22), transparent);
+  transform: translate(-50%, -50%);
+}
+
+.sealReadout {
+  position: absolute;
+  right: 8vw;
+  top: 24%;
+  width: 170px;
+  display: grid;
+  gap: 6px;
+  padding: 12px 0 12px 16px;
+  border-left: 1px solid rgba(212,229,220,.18);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-transform: uppercase;
+  transform: translate3d(calc(var(--drift-x) * .55), calc(var(--drift-y) * .2), 0);
+}
+.sealReadout span,
+.sealReadout small {
+  color: rgba(255,255,255,.28);
+  font-size: 6px;
+  letter-spacing: .17em;
+}
+.sealReadout b {
+  color: rgba(236,244,239,.78);
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: .08em;
+}
+
+.thresholdRail {
+  position: absolute;
+  left: 25%;
+  right: 25%;
+  bottom: 17%;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  align-items: end;
+  height: 46px;
+  gap: 9px;
+  transform: translate3d(calc(var(--drift-x) * -.28), 0, 0);
+}
+.thresholdRail i {
+  height: 14px;
+  border-left: 1px solid rgba(225,237,231,.23);
+  border-top: 1px solid rgba(225,237,231,.11);
+  transform: skewX(-18deg);
+}
+.thresholdRail i:nth-child(2n) { height: 31px; }
+.thresholdRail i:nth-child(3n) { height: 43px; border-left-color: rgba(184,145,95,.25); }
+
+.logicRig {
+  transform: translate3d(calc(var(--drift-x) * -.2), calc(var(--drift-y) * .22), 0) scale(.97);
+}
+.stageBoost[data-scene="2"] .logicRig {
+  transform: translate3d(calc(var(--drift-x) * -.2), calc(var(--drift-y) * .22), 0) scale(1);
+}
+
+.logicTrace {
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  top: 48%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(167,206,196,.28) 15%, rgba(195,154,101,.22) 52%, rgba(167,206,196,.25) 84%, transparent);
+  transform: rotate(-11deg);
+  transform-origin: center;
+  box-shadow: 0 0 18px rgba(153,199,188,.07);
+}
+.logicTrace::before,
+.logicTrace::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border: 1px solid rgba(224,236,230,.35);
+  border-radius: 50%;
+  background: #050809;
+  transform: translateY(-50%);
+  box-shadow: 0 0 15px rgba(163,211,198,.25);
+}
+.logicTrace::before { left: 16%; }
+.logicTrace::after { right: 17%; }
+
+.logicNode {
+  position: absolute;
+  width: clamp(170px, 19vw, 270px);
+  min-height: 145px;
+  padding: 14px 16px 16px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto 1fr auto;
+  gap: 8px 14px;
+  border-top: 1px solid rgba(255,255,255,.18);
+  border-left: 1px solid rgba(255,255,255,.07);
+  background:
+    linear-gradient(135deg, rgba(18,25,26,.21), rgba(1,3,4,.015) 72%);
+  backdrop-filter: blur(2px);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-transform: uppercase;
+  transform-style: preserve-3d;
+}
+.logicNode span {
+  color: rgba(231,240,235,.5);
+  font-size: 8px;
+  letter-spacing: .18em;
+}
+.logicNode b {
+  grid-column: 1 / -1;
+  align-self: center;
+  color: rgba(239,245,241,.58);
+  font: 700 clamp(27px, 3.5vw, 48px)/.9 Inter, ui-sans-serif, sans-serif;
+  letter-spacing: -.055em;
+}
+.logicNode i {
+  align-self: end;
+  width: 46px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(173,214,203,.5), transparent);
+}
+.logicNode small {
+  align-self: end;
+  justify-self: end;
+  color: rgba(255,255,255,.24);
+  font-size: 6px;
+  letter-spacing: .15em;
+}
+.logicNode:nth-child(2) {
+  left: 8%;
+  top: 53%;
+  transform: translate3d(calc(var(--drift-x) * -1.05), calc(var(--drift-y) * .2), 25px) rotateY(18deg) rotateZ(-2deg);
+}
+.logicNode:nth-child(3) {
+  left: 40%;
+  top: 18%;
+  transform: translate3d(calc(var(--drift-x) * .35), calc(var(--drift-y) * -.35), -5px) rotateY(-7deg) rotateZ(1deg);
+}
+.logicNode:nth-child(4) {
+  right: 7%;
+  top: 47%;
+  transform: translate3d(calc(var(--drift-x) * .92), calc(var(--drift-y) * .3), 20px) rotateY(-19deg) rotateZ(2deg);
+}
+
+.depthSlices {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity .5s ease;
+}
+.stageBoost[data-scene="0"] .depthSlices,
+.stageBoost[data-scene="1"] .depthSlices,
+.stageBoost[data-scene="2"] .depthSlices {
+  opacity: 1;
+}
+.depthSlices i {
+  position: absolute;
+  width: clamp(54px, 7vw, 115px);
+  height: 62vh;
+  top: 18%;
+  border: 1px solid rgba(219,232,226,.045);
+  background: linear-gradient(180deg, rgba(151,198,188,.035), rgba(4,7,8,.015) 42%, rgba(178,139,89,.02));
+  clip-path: polygon(22% 0, 100% 0, 77% 100%, 0 100%);
+  filter: blur(.05px);
+}
+.depthSlices i:nth-child(1) { left: -2%; transform: translateX(calc(var(--drift-x) * -1.7)) rotate(4deg); }
+.depthSlices i:nth-child(2) { left: 7%; top: 8%; height: 38vh; opacity: .6; transform: translateX(calc(var(--drift-x) * -1.1)) rotate(-6deg); }
+.depthSlices i:nth-child(3) { left: 18%; top: 68%; height: 22vh; opacity: .42; transform: translateX(calc(var(--drift-x) * -.65)) rotate(8deg); }
+.depthSlices i:nth-child(4) { right: -2%; transform: translateX(calc(var(--drift-x) * 1.6)) rotate(-4deg); }
+.depthSlices i:nth-child(5) { right: 8%; top: 9%; height: 34vh; opacity: .55; transform: translateX(calc(var(--drift-x) * 1.05)) rotate(6deg); }
+.depthSlices i:nth-child(6) { right: 18%; top: 70%; height: 20vh; opacity: .4; transform: translateX(calc(var(--drift-x) * .6)) rotate(-8deg); }
+
 .signalBand {
   position: fixed;
   z-index: 34;
@@ -212,6 +609,23 @@
   to { transform: translateX(-50%); }
 }
 
+@keyframes orbitA {
+  from { transform: translate(-50%, -50%) rotateX(69deg) rotateZ(8deg); }
+  to { transform: translate(-50%, -50%) rotateX(69deg) rotateZ(368deg); }
+}
+@keyframes orbitB {
+  from { transform: translate(-50%, -50%) rotateX(63deg) rotateY(18deg) rotateZ(-28deg); }
+  to { transform: translate(-50%, -50%) rotateX(63deg) rotateY(18deg) rotateZ(332deg); }
+}
+@keyframes orbitC {
+  from { transform: translate(-50%, -50%) rotateX(72deg) rotateY(-12deg) rotateZ(52deg); }
+  to { transform: translate(-50%, -50%) rotateX(72deg) rotateY(-12deg) rotateZ(412deg); }
+}
+@keyframes sealSpin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
 @media (max-width: 900px) {
   .sceneGhost {
     left: 14px;
@@ -232,6 +646,16 @@
   .frameCorners {
     inset: 66px 16px 34px;
   }
+  .originSlab {
+    width: 150px;
+  }
+  .slabLeft { left: 3vw; }
+  .slabRight { right: 3vw; }
+  .sealReadout { right: 4vw; }
+  .logicNode { width: 190px; }
+  .logicNode:nth-child(2) { left: 3%; }
+  .logicNode:nth-child(3) { left: 36%; }
+  .logicNode:nth-child(4) { right: 3%; }
 }
 
 @media (max-width: 620px) {
@@ -239,7 +663,8 @@
   .stageBoost::after,
   .sceneGhost,
   .sceneCaption,
-  .frameCorners {
+  .frameCorners,
+  .earlyWorld {
     display: none;
   }
   .signalBand {
@@ -252,7 +677,13 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .signalBand > div {
+  .signalBand > div,
+  .orbitA,
+  .orbitB,
+  .orbitC,
+  .thresholdRingA,
+  .thresholdRingB,
+  .thresholdRingC {
     animation: none;
   }
   .scanBeam {
