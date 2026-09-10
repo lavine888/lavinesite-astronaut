@@ -1,0 +1,187 @@
+.backdropRefined {
+  perspective: 1380px;
+  opacity: calc((1 - var(--gateway, 0)) * .92);
+  background:
+    radial-gradient(ellipse at 50% 53%, transparent 0 32%, rgba(0,0,0,.18) 62%, rgba(0,0,0,.58) 100%),
+    linear-gradient(180deg, rgba(5,4,3,.18), transparent 22%, transparent 76%, rgba(0,0,0,.34));
+}
+
+.backdropRefined::before {
+  left: 50%;
+  top: 20%;
+  bottom: 16%;
+  width: 1px;
+  opacity: .22;
+  background: linear-gradient(180deg, transparent, rgba(190,153,94,.06) 18%, rgba(224,191,132,.24) 49%, rgba(136,101,56,.05) 78%, transparent);
+  box-shadow: 0 0 26px rgba(169,126,68,.055);
+  transform: translateX(calc(-50% - var(--story-progress) * 7px));
+}
+
+.backdropRefined::after {
+  left: 28%;
+  right: 17%;
+  top: 58%;
+  height: 1px;
+  opacity: .24;
+  background: linear-gradient(90deg, transparent, rgba(162,124,69,.06) 22%, rgba(217,181,119,.17) 54%, rgba(122,89,48,.035) 76%, transparent);
+  transform: translateY(calc(var(--story-progress) * 5px));
+}
+
+.perspectiveRefined {
+  inset: -5% -2%;
+  opacity: .3;
+  filter: saturate(.68) contrast(1.16);
+  transform: translate3d(calc(var(--story-progress) * -8px), calc(var(--story-progress) * 3px), 0) scale(1.015);
+}
+
+.perspectiveRefined::before,
+.perspectiveRefined::after {
+  top: -4%;
+  bottom: -6%;
+  width: 45%;
+  opacity: 1;
+  border-style: solid;
+  box-shadow:
+    inset 0 0 120px rgba(0,0,0,.72),
+    inset 0 0 26px rgba(118,83,43,.045),
+    0 0 64px rgba(0,0,0,.4);
+}
+
+.perspectiveRefined::before {
+  left: -5%;
+  clip-path: polygon(0 0, 100% 12%, 83% 85%, 0 100%);
+  border-width: 0 1px 0 0;
+  border-color: rgba(160,122,70,.15);
+  background:
+    linear-gradient(167deg, transparent 0 14%, rgba(196,155,93,.22) 14.2%, rgba(235,204,147,.055) 14.5%, transparent 14.8% 31%, rgba(132,97,52,.13) 31.2%, transparent 31.55% 57%, rgba(198,157,95,.17) 57.2%, transparent 57.55% 76%, rgba(112,80,43,.11) 76.2%, transparent 76.55%),
+    linear-gradient(94deg, rgba(4,4,3,.98) 0%, rgba(9,8,6,.96) 40%, rgba(21,16,10,.86) 70%, rgba(51,37,20,.28) 91%, transparent 100%);
+  transform: perspective(1000px) rotateY(8deg) translateX(calc(var(--story-progress) * -5px));
+}
+
+.perspectiveRefined::after {
+  right: -5%;
+  clip-path: polygon(0 12%, 100% 0, 100% 100%, 17% 85%);
+  border-width: 0 0 0 1px;
+  border-color: rgba(160,122,70,.12);
+  background:
+    linear-gradient(193deg, transparent 0 9%, rgba(154,116,65,.15) 9.2%, transparent 9.55% 28%, rgba(213,170,103,.19) 28.2%, rgba(232,200,145,.045) 28.5%, transparent 28.8% 49%, rgba(120,87,47,.11) 49.2%, transparent 49.55% 69%, rgba(193,151,89,.16) 69.2%, transparent 69.55%),
+    linear-gradient(266deg, rgba(4,4,3,.98) 0%, rgba(9,8,6,.96) 42%, rgba(21,16,10,.84) 72%, rgba(48,34,19,.25) 91%, transparent 100%);
+  transform: perspective(1000px) rotateY(-8deg) translateX(calc(var(--story-progress) * 4px));
+}
+
+.atmosphereRefined {
+  inset: -12%;
+  opacity: .26;
+  filter: blur(34px) saturate(.72);
+  background:
+    radial-gradient(ellipse at 71% 49%, rgba(125,88,44,.11) 0 5%, rgba(80,55,29,.05) 19%, transparent 42%),
+    radial-gradient(ellipse at 31% 69%, rgba(108,78,43,.075), transparent 31%),
+    radial-gradient(ellipse at 53% 52%, rgba(204,167,105,.026), transparent 44%);
+  mix-blend-mode: screen;
+  transform: translate3d(calc(var(--story-progress) * -14px), calc(var(--story-progress) * 6px), 0) scale(1.06);
+}
+
+.atmosphereRefined::before,
+.atmosphereRefined::after {
+  content: "";
+  position: absolute;
+  height: 160%;
+  width: 7%;
+  top: -30%;
+  opacity: .16;
+  background: linear-gradient(90deg, transparent, rgba(226,188,124,.22), rgba(149,108,59,.08), transparent);
+  filter: blur(18px);
+  transform-origin: center;
+}
+
+.atmosphereRefined::before {
+  left: 24%;
+  transform: rotate(-18deg) translateX(calc(var(--story-progress) * 42px));
+  animation: archiveGlintA 9.5s ease-in-out infinite;
+}
+
+.atmosphereRefined::after {
+  right: 20%;
+  width: 5%;
+  opacity: .11;
+  transform: rotate(16deg) translateX(calc(var(--story-progress) * -34px));
+  animation: archiveGlintB 12s ease-in-out infinite;
+}
+
+.slabsRefined {
+  opacity: .62;
+}
+
+.slabsRefined::before,
+.slabsRefined::after {
+  top: -13%;
+  height: 128%;
+  width: clamp(150px, 18vw, 310px);
+  box-shadow:
+    0 0 100px rgba(0,0,0,.76),
+    inset 0 0 70px rgba(0,0,0,.52);
+}
+
+.slabsRefined::before {
+  left: -6vw;
+  border-right: 1px solid rgba(175,134,76,.17);
+  clip-path: polygon(0 0, 82% 4%, 100% 24%, 92% 63%, 100% 78%, 76% 100%, 0 100%);
+  background:
+    linear-gradient(102deg, rgba(3,3,3,.99), rgba(10,9,7,.98) 48%, rgba(24,18,11,.93) 78%, rgba(78,55,29,.19) 96%, transparent),
+    linear-gradient(180deg, transparent 0 23%, rgba(191,148,86,.055) 23.2% 23.45%, transparent 23.7% 62%, rgba(128,94,51,.05) 62.2% 62.45%, transparent 62.7%);
+  transform: skewX(-3deg) translateX(calc(var(--story-progress) * -10px));
+}
+
+.slabsRefined::after {
+  right: -7vw;
+  border-left: 1px solid rgba(175,134,76,.13);
+  clip-path: polygon(18% 4%, 100% 0, 100% 100%, 24% 100%, 0 81%, 9% 58%, 0 31%);
+  background:
+    linear-gradient(258deg, rgba(3,3,3,.99), rgba(10,9,7,.98) 48%, rgba(24,18,11,.92) 78%, rgba(76,54,29,.16) 96%, transparent),
+    linear-gradient(180deg, transparent 0 37%, rgba(194,151,88,.05) 37.2% 37.45%, transparent 37.7% 71%, rgba(123,90,49,.045) 71.2% 71.45%, transparent 71.7%);
+  transform: skewX(3deg) translateX(calc(var(--story-progress) * 9px));
+}
+
+:global(main[data-scene="0"]) .perspectiveRefined { opacity: .22; }
+:global(main[data-scene="0"]) .atmosphereRefined { opacity: .16; }
+:global(main[data-scene="0"]) .slabsRefined { opacity: .72; }
+
+:global(main[data-scene="1"]) .perspectiveRefined { opacity: .32; }
+:global(main[data-scene="1"]) .atmosphereRefined { opacity: .2; }
+:global(main[data-scene="1"]) .slabsRefined { opacity: .64; }
+
+:global(main[data-scene="2"]) .perspectiveRefined { opacity: .38; }
+:global(main[data-scene="2"]) .atmosphereRefined { opacity: .28; }
+:global(main[data-scene="2"]) .slabsRefined { opacity: .48; }
+
+:global(main[data-scene="3"]) .perspectiveRefined { opacity: .42; }
+:global(main[data-scene="3"]) .atmosphereRefined { opacity: .24; }
+:global(main[data-scene="3"]) .slabsRefined { opacity: .58; }
+
+:global(main[data-scene="4"]) .backdropRefined { opacity: 0; }
+
+@keyframes archiveGlintA {
+  0%, 72%, 100% { opacity: .03; }
+  79% { opacity: .18; }
+  84% { opacity: .05; }
+}
+
+@keyframes archiveGlintB {
+  0%, 54%, 100% { opacity: .025; }
+  61% { opacity: .13; }
+  67% { opacity: .04; }
+}
+
+@media (max-width: 760px) {
+  .backdropRefined { opacity: calc((1 - var(--gateway, 0)) * .8); }
+  .perspectiveRefined { opacity: .23; }
+  .slabsRefined::before,
+  .slabsRefined::after { width: 22vw; }
+  .atmosphereRefined::before,
+  .atmosphereRefined::after { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atmosphereRefined::before,
+  .atmosphereRefined::after { animation: none; }
+}
