@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import SceneCanvas from "./scene-canvas";
 import styles from "./page.module.css";
 import cinematic from "./cinematic.module.css";
+import archiveFx from "./archive-transitions.module.css";
 
 const MAIN_PROFILE = "https://lavine-site.vercel.app/profile";
 const SCENE_LABELS = ["ORIGIN", "THRESHOLD", "LOGIC", "ARTIFACTS", "GATEWAY"];
@@ -49,7 +50,7 @@ const artifacts = [
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 const pulse = (value: number, center: number, radius: number) => Math.max(0, 1 - Math.abs(value - center) / radius);
 
-function sceneOpacity(position: number, center: number, radius = 0.72) {
+function sceneOpacity(position: number, center: number, radius = 0.54) {
   return clamp(1 - Math.abs(position - center) / radius, 0, 1);
 }
 
@@ -86,10 +87,16 @@ export default function LavineArchive() {
       const hatchImpact = pulse(current, 0.235, 0.075);
       const gatewayImpact = pulse(current, 0.91, 0.12);
       const impact = Math.max(hatchImpact, gatewayImpact * 0.58);
+      const breach = pulse(current, 0.235, 0.052);
+      const logicCut = pulse(current, 0.505, 0.048);
+      const vaultCut = pulse(current, 0.705, 0.055);
       stage.style.setProperty("--impact", impact.toFixed(4));
       stage.style.setProperty("--story-progress", current.toFixed(4));
       stage.style.setProperty("--gateway", clamp((current - 0.78) / 0.22, 0, 1).toFixed(4));
       stage.style.setProperty("--scan", `${((current * 112) % 100).toFixed(3)}%`);
+      stage.style.setProperty("--breach", breach.toFixed(4));
+      stage.style.setProperty("--logic-cut", logicCut.toFixed(4));
+      stage.style.setProperty("--vault-cut", vaultCut.toFixed(4));
 
       const position = current * (SCENE_LABELS.length - 1);
       const nextScene = clamp(Math.round(position), 0, SCENE_LABELS.length - 1);
@@ -100,12 +107,12 @@ export default function LavineArchive() {
 
       chapterRefs.current.forEach((node, index) => {
         if (!node) return;
-        const opacity = sceneOpacity(position, index, index === 0 ? 0.82 : 0.74);
-        const offset = clamp((position - index) * -58, -46, 46);
-        const scale = 0.985 + opacity * 0.015;
+        const opacity = sceneOpacity(position, index, index === 0 ? 0.62 : 0.54);
+        const offset = clamp((position - index) * -64, -50, 50);
+        const scale = 0.988 + opacity * 0.012;
         node.style.opacity = opacity.toFixed(3);
         node.style.transform = `translate3d(0, ${offset}px, 0) scale(${scale})`;
-        node.style.pointerEvents = opacity > 0.58 ? "auto" : "none";
+        node.style.pointerEvents = opacity > 0.66 ? "auto" : "none";
       });
 
       raf = requestAnimationFrame(paint);
@@ -126,6 +133,22 @@ export default function LavineArchive() {
   return (
     <main ref={stageRef} data-scene={activeScene} className={`${styles.stage} ${cinematic.stageBoost}`}>
       <SceneCanvas />
+
+      <div className={archiveFx.bootSequence} aria-hidden="true">
+        <div className={archiveFx.bootCore}>
+          <span>PERSONAL SYSTEM / LX-888</span>
+          <b>LAVINE / ARCHIVE</b>
+          <small>INDEXING SELECTED OBJECTS · SIGNAL VERIFIED</small>
+          <div className={archiveFx.bootStatus}><i /></div>
+        </div>
+      </div>
+
+      <div className={archiveFx.transitionVeil} aria-hidden="true">
+        <div className={archiveFx.alloyGrade} />
+        <div className={archiveFx.breachCut} />
+        <div className={archiveFx.logicCut} />
+        <div className={archiveFx.vaultCut} />
+      </div>
 
       <div className={styles.fx} aria-hidden="true">
         <div className={styles.lightBloom} />
