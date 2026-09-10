@@ -1,0 +1,227 @@
+.bootSequence {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  pointer-events: none;
+  background: #030303;
+  animation: bootExit 2.15s cubic-bezier(.72,0,.2,1) forwards;
+}
+
+.bootSequence::before,
+.bootSequence::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  pointer-events: none;
+}
+
+.bootSequence::before {
+  width: min(62vw, 860px);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(179,145,94,.18) 14%, rgba(218,198,158,.76) 50%, rgba(179,145,94,.18) 86%, transparent);
+  transform: translate(-50%, -50%) scaleX(0);
+  transform-origin: center;
+  animation: bootLine 1.32s cubic-bezier(.2,.75,.18,1) .18s forwards;
+}
+
+.bootSequence::after {
+  width: min(68vw, 920px);
+  aspect-ratio: 1;
+  border: 1px solid rgba(177,143,89,.06);
+  border-radius: 50%;
+  box-shadow: inset 0 0 90px rgba(152,118,65,.025);
+  transform: translate(-50%, -50%) scale(.72);
+  opacity: 0;
+  animation: bootHalo 1.65s ease-out .24s forwards;
+}
+
+.bootCore {
+  position: relative;
+  z-index: 2;
+  width: min(560px, 72vw);
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  text-align: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-transform: uppercase;
+}
+
+.bootCore span {
+  color: rgba(218,196,156,.42);
+  font-size: 8px;
+  letter-spacing: .42em;
+  opacity: 0;
+  animation: bootText .55s ease .2s forwards;
+}
+
+.bootCore b {
+  color: rgba(239,235,224,.92);
+  font-size: clamp(18px, 2.4vw, 31px);
+  font-weight: 500;
+  letter-spacing: .18em;
+  opacity: 0;
+  transform: translateY(8px);
+  animation: bootTitle .66s cubic-bezier(.2,.76,.2,1) .42s forwards;
+}
+
+.bootCore small {
+  color: rgba(255,255,255,.24);
+  font-size: 7px;
+  letter-spacing: .25em;
+  opacity: 0;
+  animation: bootText .52s ease .82s forwards;
+}
+
+.bootStatus {
+  margin-top: 17px;
+  width: min(300px, 62vw);
+  height: 1px;
+  overflow: hidden;
+  background: rgba(255,255,255,.065);
+  opacity: 0;
+  animation: bootText .3s ease .5s forwards;
+}
+
+.bootStatus i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(114,91,56,.2), rgba(190,155,99,.92), rgba(229,214,184,.72));
+  transform: translateX(-100%);
+  animation: bootProgress 1.05s cubic-bezier(.36,.05,.2,1) .54s forwards;
+}
+
+.transitionVeil {
+  position: fixed;
+  inset: 0;
+  z-index: 22;
+  overflow: hidden;
+  pointer-events: none;
+  isolation: isolate;
+}
+
+.breachCut,
+.logicCut,
+.vaultCut,
+.alloyGrade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.breachCut {
+  opacity: calc(var(--breach, 0) * .94);
+  background:
+    radial-gradient(circle at 50% 50%, rgba(218,197,157,.26) 0 1%, rgba(160,128,77,.09) 7%, transparent 25%),
+    radial-gradient(circle at 50% 50%, transparent 0 24%, rgba(2,2,2,.64) 43%, rgba(0,0,0,.94) 72%, transparent 82%);
+  transform: scale(calc(.91 + var(--breach, 0) * .14));
+  mix-blend-mode: screen;
+}
+
+.breachCut::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(52vw, 650px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid rgba(213,188,145,.42);
+  box-shadow: 0 0 44px rgba(156,119,66,.14), inset 0 0 54px rgba(201,169,112,.05);
+  transform: translate(-50%, -50%) scale(calc(.74 + var(--breach, 0) * .54));
+  opacity: calc(var(--breach, 0) * .72);
+}
+
+.logicCut {
+  opacity: calc(var(--logic-cut, 0) * .78);
+  background:
+    linear-gradient(90deg, transparent 0 47.8%, rgba(179,142,86,.12) 49%, rgba(232,217,187,.42) 50%, rgba(179,142,86,.12) 51%, transparent 52.2%),
+    linear-gradient(90deg, rgba(0,0,0,.64), transparent 20%, transparent 80%, rgba(0,0,0,.64));
+  transform: translateX(calc((1 - var(--logic-cut, 0)) * -6%));
+}
+
+.logicCut::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(226,210,177,.72);
+  box-shadow: 0 0 22px rgba(177,137,77,.32);
+  transform: scaleY(calc(.28 + var(--logic-cut, 0) * .72));
+  transform-origin: center;
+}
+
+.vaultCut {
+  opacity: calc(var(--vault-cut, 0) * .88);
+  background:
+    linear-gradient(116deg, transparent 0 37%, rgba(2,2,2,.88) 43%, rgba(74,55,31,.58) 49.7%, rgba(181,141,82,.18) 50%, rgba(2,2,2,.9) 50.3%, rgba(2,2,2,.62) 57%, transparent 63%);
+  transform: translateX(calc((1 - var(--vault-cut, 0)) * 13%)) scale(1.06);
+}
+
+.alloyGrade {
+  z-index: -1;
+  opacity: calc((1 - var(--gateway, 0)) * .68);
+  background:
+    radial-gradient(circle at 72% 58%, rgba(121,88,47,.08), transparent 31%),
+    radial-gradient(circle at 18% 28%, rgba(188,171,137,.035), transparent 28%),
+    linear-gradient(115deg, rgba(24,17,10,.055), transparent 34%, rgba(67,49,27,.055));
+  mix-blend-mode: soft-light;
+}
+
+@keyframes bootLine {
+  0% { transform: translate(-50%, -50%) scaleX(0); opacity: 0; }
+  18% { opacity: 1; }
+  72% { transform: translate(-50%, -50%) scaleX(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scaleX(1); opacity: .15; }
+}
+
+@keyframes bootHalo {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.72); }
+  42% { opacity: .58; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.04); }
+}
+
+@keyframes bootText {
+  to { opacity: 1; }
+}
+
+@keyframes bootTitle {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes bootProgress {
+  to { transform: translateX(0); }
+}
+
+@keyframes bootExit {
+  0%, 73% { opacity: 1; visibility: visible; }
+  100% { opacity: 0; visibility: hidden; }
+}
+
+@media (max-width: 760px) {
+  .bootSequence { animation-duration: 1.6s; }
+  .breachCut::after { width: 76vw; }
+  .logicCut { opacity: calc(var(--logic-cut, 0) * .52); }
+  .vaultCut { opacity: calc(var(--vault-cut, 0) * .58); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bootSequence { animation-duration: .36s; }
+  .bootSequence::before,
+  .bootSequence::after,
+  .bootCore span,
+  .bootCore b,
+  .bootCore small,
+  .bootStatus,
+  .bootStatus i { animation-duration: .15s; animation-delay: 0s; }
+  .breachCut,
+  .logicCut,
+  .vaultCut { display: none; }
+}
