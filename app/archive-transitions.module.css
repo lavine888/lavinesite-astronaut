@@ -1,3 +1,159 @@
+.archiveBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  pointer-events: none;
+  perspective: 1150px;
+  transform-style: preserve-3d;
+  opacity: calc(1 - var(--gateway, 0));
+  transition: opacity .55s ease;
+}
+
+.archiveBackdrop::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 16%;
+  bottom: 12%;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, rgba(183,145,84,.06) 18%, rgba(222,188,126,.22) 50%, rgba(126,91,48,.06) 82%, transparent);
+  box-shadow: 0 0 34px rgba(145,103,54,.07);
+  opacity: .5;
+  transform: translateX(calc(-50% + var(--story-progress) * -11px));
+}
+
+.archiveBackdrop::after {
+  content: "";
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: 57%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(174,137,79,.08) 18%, rgba(218,184,124,.18) 50%, rgba(174,137,79,.08) 82%, transparent);
+  opacity: .52;
+  transform: translateY(calc(var(--story-progress) * 9px));
+}
+
+.vaultPerspective,
+.goldAtmosphere,
+.depthSlabs {
+  position: absolute;
+  inset: 0;
+}
+
+.vaultPerspective {
+  inset: -8% -4%;
+  opacity: .22;
+  transform: translate3d(calc(var(--story-progress) * -14px), calc(var(--story-progress) * 6px), 0) scale(1.02);
+  transition: opacity .7s ease, filter .7s ease;
+  filter: saturate(.86) contrast(1.06);
+}
+
+.vaultPerspective::before,
+.vaultPerspective::after {
+  content: "";
+  position: absolute;
+  top: -2%;
+  bottom: -4%;
+  width: 47%;
+  opacity: .96;
+  background:
+    repeating-linear-gradient(168deg,
+      transparent 0 52px,
+      rgba(187,148,87,.14) 53px,
+      rgba(230,199,144,.035) 54px,
+      transparent 55px 108px),
+    linear-gradient(90deg, rgba(19,14,9,.64), rgba(67,48,26,.16) 56%, transparent 100%);
+  border-color: rgba(176,137,77,.14);
+  border-style: solid;
+  box-shadow: inset 0 0 90px rgba(0,0,0,.56);
+}
+
+.vaultPerspective::before {
+  left: -3%;
+  clip-path: polygon(0 0, 100% 14%, 86% 87%, 0 100%);
+  border-width: 0 1px 0 0;
+  transform: perspective(900px) rotateY(10deg) translateX(calc(var(--story-progress) * -8px));
+  transform-origin: left center;
+}
+
+.vaultPerspective::after {
+  right: -3%;
+  clip-path: polygon(0 14%, 100% 0, 100% 100%, 14% 87%);
+  border-width: 0 0 0 1px;
+  background:
+    repeating-linear-gradient(192deg,
+      transparent 0 52px,
+      rgba(187,148,87,.14) 53px,
+      rgba(230,199,144,.035) 54px,
+      transparent 55px 108px),
+    linear-gradient(270deg, rgba(19,14,9,.64), rgba(67,48,26,.16) 56%, transparent 100%);
+  transform: perspective(900px) rotateY(-10deg) translateX(calc(var(--story-progress) * 8px));
+  transform-origin: right center;
+}
+
+.goldAtmosphere {
+  inset: -10%;
+  opacity: .38;
+  background:
+    radial-gradient(ellipse at 68% 48%, rgba(153,109,55,.18) 0 4%, rgba(112,77,38,.095) 16%, transparent 39%),
+    radial-gradient(ellipse at 30% 67%, rgba(123,89,47,.11), transparent 34%),
+    radial-gradient(ellipse at 52% 52%, rgba(213,179,117,.035), transparent 48%);
+  filter: blur(24px);
+  mix-blend-mode: screen;
+  transform: translate3d(calc(var(--story-progress) * -26px), calc(var(--story-progress) * 11px), 0) scale(1.08);
+  transition: opacity .75s ease, transform .75s ease;
+}
+
+.depthSlabs {
+  opacity: .46;
+  transition: opacity .65s ease;
+}
+
+.depthSlabs::before,
+.depthSlabs::after {
+  content: "";
+  position: absolute;
+  top: -18%;
+  height: 136%;
+  width: clamp(120px, 15vw, 250px);
+  background:
+    linear-gradient(90deg, rgba(7,6,4,.88), rgba(25,18,10,.68) 58%, rgba(117,83,43,.12) 92%, transparent),
+    repeating-linear-gradient(180deg, transparent 0 92px, rgba(176,136,75,.075) 93px 94px, transparent 95px 160px);
+  box-shadow: 0 0 80px rgba(0,0,0,.64);
+}
+
+.depthSlabs::before {
+  left: -3.5vw;
+  border-right: 1px solid rgba(177,137,78,.13);
+  transform: skewX(-7deg) translateX(calc(var(--story-progress) * -18px));
+}
+
+.depthSlabs::after {
+  right: -3.5vw;
+  border-left: 1px solid rgba(177,137,78,.13);
+  transform: skewX(7deg) translateX(calc(var(--story-progress) * 18px));
+}
+
+:global(main[data-scene="0"]) .vaultPerspective { opacity: .28; }
+:global(main[data-scene="0"]) .goldAtmosphere { opacity: .3; }
+:global(main[data-scene="0"]) .depthSlabs { opacity: .62; }
+
+:global(main[data-scene="1"]) .vaultPerspective { opacity: .46; filter: saturate(.88) contrast(1.13); }
+:global(main[data-scene="1"]) .goldAtmosphere { opacity: .44; }
+:global(main[data-scene="1"]) .depthSlabs { opacity: .5; }
+
+:global(main[data-scene="2"]) .vaultPerspective { opacity: .64; filter: saturate(.92) contrast(1.18); }
+:global(main[data-scene="2"]) .goldAtmosphere { opacity: .72; transform: translate3d(calc(var(--story-progress) * -32px), calc(var(--story-progress) * 13px), 0) scale(1.14); }
+:global(main[data-scene="2"]) .depthSlabs { opacity: .4; }
+
+:global(main[data-scene="3"]) .vaultPerspective { opacity: .72; filter: saturate(.9) contrast(1.22); }
+:global(main[data-scene="3"]) .goldAtmosphere { opacity: .62; }
+:global(main[data-scene="3"]) .depthSlabs { opacity: .56; }
+
+:global(main[data-scene="4"]) .archiveBackdrop { opacity: 0; }
+
 .bootSequence {
   position: fixed;
   inset: 0;
@@ -305,6 +461,12 @@
 }
 
 @media (max-width: 760px) {
+  .archiveBackdrop { opacity: calc((1 - var(--gateway, 0)) * .84); }
+  .vaultPerspective { opacity: .34; }
+  .goldAtmosphere { filter: blur(30px); }
+  .depthSlabs::before,
+  .depthSlabs::after { width: 18vw; }
+
   .bootSequence { animation-duration: 2.2s; }
   .bootCore b { font-size: clamp(22px, 7vw, 36px); }
   .breachCut::before { width: 92vw; }
@@ -314,6 +476,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .archiveBackdrop,
+  .vaultPerspective,
+  .goldAtmosphere,
+  .depthSlabs { transition: none; transform: none; }
+
   .bootSequence { animation-duration: .42s; }
   .bootSequence::before,
   .bootSequence::after,
