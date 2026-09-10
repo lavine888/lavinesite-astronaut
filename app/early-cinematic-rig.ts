@@ -29,6 +29,26 @@ function makeArcPlate(inner: number, outer: number, start: number, length: numbe
   return geometry;
 }
 
+function makeShardGeometry() {
+  const shape = new THREE.Shape();
+  shape.moveTo(0, -0.34);
+  shape.lineTo(0.12, 0.02);
+  shape.lineTo(0.025, 0.34);
+  shape.lineTo(-0.095, 0.08);
+  shape.closePath();
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    depth: 0.05,
+    steps: 1,
+    bevelEnabled: true,
+    bevelThickness: 0.009,
+    bevelSize: 0.009,
+    bevelSegments: 1,
+  });
+  geometry.translate(0, 0, -0.025);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
 const GLASS_SHADER = {
   uniforms: {
     uTime: { value: 0 },
@@ -62,129 +82,192 @@ const GLASS_SHADER = {
     void main() {
       vec3 V = normalize(cameraPosition - vWorldPosition);
       float facing = clamp(dot(normalize(vWorldNormal), V), 0.0, 1.0);
-      float fresnel = pow(1.0 - facing, 2.45);
+      float fresnel = pow(1.0 - facing, 2.7);
 
-      float scanY = mix(2.35, -2.35, clamp(uMeasure, 0.0, 1.0));
-      float scan = exp(-abs(vLocalPosition.y - scanY) * 11.5) * smoothstep(0.02, 0.3, uMeasure);
-      float veins = pow(0.5 + 0.5 * sin(vLocalPosition.y * 8.0 + vLocalPosition.x * 5.0 - uTime * 0.6), 10.0);
+      float scanY = mix(2.3, -2.3, clamp(uMeasure, 0.0, 1.0));
+      float scan = exp(-abs(vLocalPosition.y - scanY) * 13.0) * smoothstep(0.02, 0.28, uMeasure);
+      float latitude = 0.5 + 0.5 * sin(vLocalPosition.y * 7.0 - uTime * 0.42);
+      float longitude = 0.5 + 0.5 * sin(atan(vLocalPosition.z, vLocalPosition.x) * 6.0 + uTime * 0.18);
+      float caustic = pow(latitude * longitude, 7.0) * uMeasure;
+      float topFade = smoothstep(-2.4, 1.8, vLocalPosition.y);
 
-      vec3 ink = vec3(0.035, 0.055, 0.055);
-      vec3 cold = vec3(0.44, 0.69, 0.64);
-      vec3 warm = vec3(0.63, 0.48, 0.31);
-      vec3 color = mix(ink, cold, fresnel * 0.92 + scan * 0.34);
-      color = mix(color, warm, uShip * (0.18 + fresnel * 0.28));
-      color += cold * scan * 1.1;
-      color += cold * veins * 0.035 * uMeasure;
+      vec3 ink = vec3(0.025, 0.042, 0.043);
+      vec3 cold = vec3(0.43, 0.68, 0.64);
+      vec3 pale = vec3(0.72, 0.84, 0.80);
+      vec3 warm = vec3(0.64, 0.47, 0.29);
+      vec3 color = mix(ink, cold, fresnel * 0.84);
+      color = mix(color, pale, fresnel * fresnel * 0.18 + scan * 0.22);
+      color = mix(color, warm, uShip * (0.14 + fresnel * 0.30));
+      color += cold * scan * 1.15;
+      color += pale * caustic * 0.07;
+      color += cold * topFade * 0.018;
 
-      float alpha = uOpacity * (0.055 + fresnel * 0.39 + scan * 0.22 + veins * 0.025 * uMeasure);
+      float alpha = uOpacity * (0.038 + fresnel * 0.39 + scan * 0.20 + caustic * 0.035);
       gl_FragColor = vec4(color, alpha);
     }
   `,
 };
 
 export function createEarlyCinematicRig(world: THREE.Group, hatch: THREE.Group, isMobile: boolean) {
-  // 00 — Monumental architectural wipe. Large custom arc plates replace generic torus geometry.
+  // 00 — Monumental architectural wipe: asymmetric, sculptural, mostly silhouette.
   const sweep = new THREE.Group();
   world.add(sweep);
 
   const darkMetal = new THREE.MeshStandardMaterial({
-    color: 0x202927,
-    roughness: 0.23,
-    metalness: 0.93,
-    emissive: 0x030706,
-    emissiveIntensity: 0.32,
+    color: 0x171e1d,
+    roughness: 0.2,
+    metalness: 0.95,
+    emissive: 0x020504,
+    emissiveIntensity: 0.22,
   });
   const bronzeMetal = new THREE.MeshStandardMaterial({
-    color: 0x40372b,
-    roughness: 0.27,
-    metalness: 0.88,
-    emissive: 0x0c0804,
-    emissiveIntensity: 0.18,
+    color: 0x493b2a,
+    roughness: 0.24,
+    metalness: 0.9,
+    emissive: 0x100a04,
+    emissiveIntensity: 0.16,
   });
   const edgeMaterial = new THREE.LineBasicMaterial({
-    color: 0xc8d8d1,
+    color: 0xc9d9d2,
     transparent: true,
-    opacity: 0.21,
+    opacity: 0.14,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
   });
 
   const plateSpecs: Array<[number, number, number, number, number, THREE.Material]> = [
-    [4.75, 6.55, -1.12, 1.34, 0.18, darkMetal],
-    [3.82, 4.48, 0.42, 1.02, 0.12, bronzeMetal],
-    [6.82, 7.25, -2.0, 0.92, 0.1, darkMetal],
+    [4.7, 6.7, -1.18, 1.28, 0.2, darkMetal],
+    [3.72, 4.42, 0.34, 0.86, 0.115, bronzeMetal],
+    [6.9, 7.36, -2.05, 0.84, 0.095, darkMetal],
+    [7.48, 8.72, -2.82, 0.49, 0.16, darkMetal],
   ];
   const sweepPlates: THREE.Mesh[] = [];
   plateSpecs.forEach(([inner, outer, start, length, depth, material], index) => {
     const geometry = makeArcPlate(inner, outer, start, length, depth);
     const plate = new THREE.Mesh(geometry, material);
-    plate.rotation.set(0.24 - index * 0.05, 0.38 + index * 0.11, -0.16 + index * 0.23);
+    plate.rotation.set(0.21 - index * 0.035, 0.36 + index * 0.09, -0.17 + index * 0.19);
     sweep.add(plate);
     sweepPlates.push(plate);
 
-    const edge = new THREE.LineSegments(new THREE.EdgesGeometry(geometry, 24), edgeMaterial.clone());
-    edge.rotation.copy(plate.rotation);
-    sweep.add(edge);
+    if (index < 3) {
+      const edge = new THREE.LineSegments(new THREE.EdgesGeometry(geometry, 25), edgeMaterial.clone());
+      edge.rotation.copy(plate.rotation);
+      sweep.add(edge);
+    }
   });
 
-  const sweepSpine = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.16, 7.4, 4, 10),
-    darkMetal,
-  );
-  sweepSpine.rotation.set(0.16, 0.34, Math.PI / 2 - 0.22);
-  sweepSpine.position.set(-0.9, 0.4, -0.24);
+  const sweepSpine = new THREE.Mesh(new THREE.CapsuleGeometry(0.14, 7.6, 4, 10), darkMetal);
+  sweepSpine.rotation.set(0.14, 0.31, Math.PI / 2 - 0.2);
+  sweepSpine.position.set(-0.95, 0.35, -0.22);
   sweep.add(sweepSpine);
 
-  const sweepAccent = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.028, 6.6, 3, 8),
+  const coldSeamMaterial = new THREE.MeshBasicMaterial({
+    color: 0xbcd7cd,
+    transparent: true,
+    opacity: 0.25,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  const sweepAccent = new THREE.Mesh(new THREE.CapsuleGeometry(0.022, 6.7, 3, 8), coldSeamMaterial);
+  sweepAccent.rotation.copy(sweepSpine.rotation);
+  sweepAccent.position.set(-0.68, 0.58, 0.035);
+  sweep.add(sweepAccent);
+
+  const warmAccent = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.018, 2.2, 3, 8),
     new THREE.MeshBasicMaterial({
-      color: 0xb9d3c9,
+      color: 0xc39762,
       transparent: true,
-      opacity: 0.32,
+      opacity: 0.2,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     }),
   );
-  sweepAccent.rotation.copy(sweepSpine.rotation);
-  sweepAccent.position.set(-0.68, 0.62, 0.02);
-  sweep.add(sweepAccent);
-  sweep.position.set(-5.3, 0.25, 7.7);
+  warmAccent.rotation.set(0.13, 0.35, -0.72);
+  warmAccent.position.set(2.35, -1.5, 0.05);
+  sweep.add(warmAccent);
 
-  const sweepLight = new THREE.PointLight(0x8eb6ac, 8, 18, 2.2);
-  sweepLight.position.set(-1.8, 2.2, 2.4);
+  sweep.position.set(-6.25, 0.72, 8.05);
+  sweep.rotation.x = -0.055;
+
+  const sweepLight = new THREE.PointLight(0x8eb6ac, 7, 17, 2.2);
+  sweepLight.position.set(-1.6, 2.35, 2.2);
   sweep.add(sweepLight);
 
-  // 01 — Sequential hatch latches, polished and understated.
-  const latchGeometry = new THREE.CapsuleGeometry(0.075, 0.5, 4, 8);
+  // Cinematic lights belong to this one WebGL world; no shadows, tiny GPU cost.
+  const openingTarget = new THREE.Object3D();
+  openingTarget.position.set(0, 0.15, 3.1);
+  world.add(openingTarget);
+  const openingSpot = new THREE.SpotLight(0xd8e6e1, 0, 34, Math.PI * 0.16, 0.72, 2.0);
+  openingSpot.position.set(-4.8, 5.4, 12.5);
+  openingSpot.target = openingTarget;
+  world.add(openingSpot);
+
+  const logicTarget = new THREE.Object3D();
+  logicTarget.position.set(-0.35, 0.1, -15.5);
+  world.add(logicTarget);
+  const logicSpot = new THREE.SpotLight(0xb89366, 0, 24, Math.PI * 0.19, 0.76, 2.0);
+  logicSpot.position.set(4.8, 4.4, -10.3);
+  logicSpot.target = logicTarget;
+  world.add(logicSpot);
+
+  // 01 — Sequential hatch latches with an actual unlock wave.
+  const latchGeometry = new THREE.CapsuleGeometry(0.07, 0.5, 4, 8);
   const latchMaterial = new THREE.MeshStandardMaterial({
-    color: 0x7d8c87,
-    roughness: 0.22,
-    metalness: 0.92,
-    emissive: 0x29413a,
-    emissiveIntensity: 0.16,
+    color: 0x66746f,
+    roughness: 0.2,
+    metalness: 0.94,
+    emissive: 0x223630,
+    emissiveIntensity: 0.13,
   });
   const latchMesh = new THREE.InstancedMesh(latchGeometry, latchMaterial, 8);
   latchMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   hatch.add(latchMesh);
   const latchDummy = new THREE.Object3D();
+  const latchColor = new THREE.Color();
+  for (let i = 0; i < 8; i += 1) latchMesh.setColorAt(i, new THREE.Color(0x53605c));
+  if (latchMesh.instanceColor) latchMesh.instanceColor.needsUpdate = true;
 
   const lockHaloMaterial = new THREE.MeshBasicMaterial({
-    color: 0xd5e2dc,
+    color: 0xd7e5df,
     transparent: true,
-    opacity: 0.055,
+    opacity: 0.045,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
   });
-  const lockHalo = new THREE.Mesh(new THREE.TorusGeometry(4.58, 0.025, 6, 96), lockHaloMaterial);
+  const lockHalo = new THREE.Mesh(new THREE.TorusGeometry(4.58, 0.022, 6, 96), lockHaloMaterial);
   hatch.add(lockHalo);
 
-  // 02 — A designed data specimen: glass skin, warm nucleus, restrained orbital system.
+  const confirmHaloMaterial = new THREE.MeshBasicMaterial({
+    color: 0xc49a68,
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+  });
+  const confirmHalo = new THREE.Mesh(new THREE.TorusGeometry(4.38, 0.018, 6, 96), confirmHaloMaterial);
+  hatch.add(confirmHalo);
+
+  // 02 — Designed data specimen: authored silhouette instead of a stock sphere.
   const dataRig = new THREE.Group();
-  dataRig.position.set(-0.45, 0.12, -15.65);
+  dataRig.position.set(-0.52, 0.05, -15.65);
+  dataRig.rotation.z = -0.065;
   world.add(dataRig);
 
-  const shellGeometry = new THREE.SphereGeometry(isMobile ? 1.72 : 1.95, isMobile ? 24 : 34, isMobile ? 16 : 22);
-  shellGeometry.scale(1.05, 1.26, 0.86);
+  const profile = [
+    new THREE.Vector2(0.22, -2.18),
+    new THREE.Vector2(0.68, -1.83),
+    new THREE.Vector2(1.18, -1.18),
+    new THREE.Vector2(1.52, -0.38),
+    new THREE.Vector2(1.58, 0.38),
+    new THREE.Vector2(1.31, 1.14),
+    new THREE.Vector2(0.78, 1.8),
+    new THREE.Vector2(0.27, 2.15),
+  ];
+  const shellGeometry = new THREE.LatheGeometry(profile, isMobile ? 24 : 34);
+  shellGeometry.scale(1.04, 1.0, 0.87);
+  shellGeometry.computeVertexNormals();
+
   const shellMaterial = new THREE.ShaderMaterial({
     uniforms: THREE.UniformsUtils.clone(GLASS_SHADER.uniforms),
     vertexShader: GLASS_SHADER.vertexShader,
@@ -197,7 +280,7 @@ export function createEarlyCinematicRig(world: THREE.Group, hatch: THREE.Group, 
   dataRig.add(shell);
 
   const innerShellMaterial = new THREE.MeshBasicMaterial({
-    color: 0x78958e,
+    color: 0x76958d,
     transparent: true,
     opacity: 0,
     wireframe: true,
@@ -205,95 +288,107 @@ export function createEarlyCinematicRig(world: THREE.Group, hatch: THREE.Group, 
     blending: THREE.AdditiveBlending,
   });
   const innerShell = new THREE.Mesh(shellGeometry.clone(), innerShellMaterial);
-  innerShell.scale.setScalar(0.82);
+  innerShell.scale.setScalar(0.81);
   dataRig.add(innerShell);
 
   const coreMaterial = new THREE.MeshStandardMaterial({
-    color: 0x8f7350,
-    emissive: 0x6c4d2f,
-    emissiveIntensity: 0.55,
-    roughness: 0.22,
-    metalness: 0.72,
+    color: 0x8e704b,
+    emissive: 0x704c2c,
+    emissiveIntensity: 0.5,
+    roughness: 0.2,
+    metalness: 0.74,
   });
-  const core = new THREE.Mesh(new THREE.DodecahedronGeometry(0.63, 0), coreMaterial);
+  const core = new THREE.Mesh(new THREE.DodecahedronGeometry(0.6, 0), coreMaterial);
   core.rotation.set(0.25, 0.5, -0.1);
   dataRig.add(core);
 
   const coreHaloMaterial = new THREE.MeshBasicMaterial({
-    color: 0xd0aa76,
+    color: 0xd1aa77,
     transparent: true,
-    opacity: 0.12,
+    opacity: 0.1,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
   });
-  const coreHalo = new THREE.Mesh(new THREE.SphereGeometry(0.9, 18, 12), coreHaloMaterial);
+  const coreHalo = new THREE.Mesh(new THREE.SphereGeometry(0.88, 16, 10), coreHaloMaterial);
   dataRig.add(coreHalo);
 
   const orbitMaterial = new THREE.MeshBasicMaterial({
-    color: 0xb5cbc4,
+    color: 0xb9cec7,
     transparent: true,
-    opacity: 0.12,
+    opacity: 0.1,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
   });
   const orbits: THREE.Mesh[] = [];
-  [2.35, 2.62, 2.86].forEach((radius, index) => {
-    const orbit = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.018, 5, 64), orbitMaterial.clone());
-    orbit.rotation.set(
-      Math.PI / 2 + index * 0.31,
-      0.24 + index * 0.42,
-      0.18 - index * 0.27,
-    );
+  [
+    { radius: 2.42, arc: Math.PI * 1.52, rotation: [Math.PI / 2 + 0.18, 0.32, 0.08] as const },
+    { radius: 2.76, arc: Math.PI * 1.18, rotation: [Math.PI / 2 + 0.64, 0.92, -0.48] as const },
+  ].forEach((spec) => {
+    const orbit = new THREE.Mesh(new THREE.TorusGeometry(spec.radius, 0.017, 5, 58, spec.arc), orbitMaterial.clone());
+    orbit.rotation.set(spec.rotation[0], spec.rotation[1], spec.rotation[2]);
     dataRig.add(orbit);
     orbits.push(orbit);
   });
 
   const scanRingMaterial = new THREE.MeshBasicMaterial({
-    color: 0xe0f2eb,
+    color: 0xe3f3ed,
     transparent: true,
     opacity: 0,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
   });
-  const scanRing = new THREE.Mesh(new THREE.TorusGeometry(2.3, 0.026, 5, 72), scanRingMaterial);
+  const scanRing = new THREE.Mesh(new THREE.TorusGeometry(2.22, 0.024, 5, 68), scanRingMaterial);
   scanRing.rotation.x = Math.PI / 2;
   dataRig.add(scanRing);
 
-  const fragmentCount = isMobile ? 9 : 15;
-  const fragmentGeometry = new THREE.TetrahedronGeometry(0.17, 0);
+  const pedestalMaterial = new THREE.MeshBasicMaterial({
+    color: 0x8fb5aa,
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide,
+  });
+  const pedestal = new THREE.Mesh(new THREE.RingGeometry(1.6, 2.95, 64), pedestalMaterial);
+  pedestal.rotation.x = -Math.PI / 2;
+  pedestal.position.y = -2.47;
+  dataRig.add(pedestal);
+
+  const fragmentCount = isMobile ? 8 : 13;
+  const fragmentGeometry = makeShardGeometry();
   const fragmentMaterial = new THREE.MeshStandardMaterial({
-    color: 0x9caea8,
-    roughness: 0.24,
-    metalness: 0.8,
-    emissive: 0x0b1210,
-    emissiveIntensity: 0.2,
+    color: 0x9faea9,
+    roughness: 0.22,
+    metalness: 0.82,
+    emissive: 0x0a1110,
+    emissiveIntensity: 0.16,
   });
   const fragments = new THREE.InstancedMesh(fragmentGeometry, fragmentMaterial, fragmentCount);
   fragments.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   dataRig.add(fragments);
   const fragmentDummy = new THREE.Object3D();
   const fragmentSeeds = Array.from({ length: fragmentCount }, (_, i) => ({
-    angle: (i / fragmentCount) * Math.PI * 2 + (i % 3) * 0.31,
-    height: ((i % 5) - 2) * 0.42,
+    angle: (i / fragmentCount) * Math.PI * 2 + (i % 3) * 0.37,
+    height: ((i % 5) - 2) * 0.44,
     depth: ((i % 4) - 1.5) * 0.18,
-    spread: 0.3 + (i % 4) * 0.18,
+    spread: 0.28 + (i % 4) * 0.19,
   }));
 
-  const pointCount = isMobile ? 90 : 180;
+  const pointCount = isMobile ? 72 : 145;
   const pointPositions = new Float32Array(pointCount * 3);
   for (let i = 0; i < pointCount; i += 1) {
-    const r = 0.35 + Math.random() * 1.7;
+    const r = 0.35 + Math.random() * 1.65;
     const theta = Math.random() * Math.PI * 2;
     const phi = Math.acos(2 * Math.random() - 1);
     pointPositions[i * 3] = Math.sin(phi) * Math.cos(theta) * r;
-    pointPositions[i * 3 + 1] = Math.cos(phi) * r * 1.2;
-    pointPositions[i * 3 + 2] = Math.sin(phi) * Math.sin(theta) * r * 0.86;
+    pointPositions[i * 3 + 1] = Math.cos(phi) * r * 1.18;
+    pointPositions[i * 3 + 2] = Math.sin(phi) * Math.sin(theta) * r * 0.84;
   }
   const pointGeometry = new THREE.BufferGeometry();
   pointGeometry.setAttribute("position", new THREE.BufferAttribute(pointPositions, 3));
   const pointMaterial = new THREE.PointsMaterial({
-    color: 0xd9ebe4,
-    size: isMobile ? 0.022 : 0.029,
+    color: 0xdaece5,
+    size: isMobile ? 0.021 : 0.027,
     transparent: true,
     opacity: 0,
     depthWrite: false,
@@ -310,25 +405,28 @@ export function createEarlyCinematicRig(world: THREE.Group, hatch: THREE.Group, 
   dataRig.add(warmLight);
 
   const update = (progress: number, time: number) => {
-    // Monumental wipe: the object starts partially off-screen and crosses the camera as one coherent sculpture.
-    const sweepIn = smoothstep(0.0, 0.07, progress);
-    const sweepOut = smoothstep(0.075, 0.17, progress);
-    sweep.visible = progress < 0.19;
-    sweep.position.x = lerp(-5.3, -0.4, sweepIn) + sweepOut * 6.2;
-    sweep.position.y = 0.25 - sweepIn * 0.7 + sweepOut * 0.95;
-    sweep.position.z = 7.7 - sweepIn * 2.4 + sweepOut * 0.65;
-    sweep.rotation.y = -0.12 + sweepIn * 0.22 + sweepOut * 0.08;
-    sweep.rotation.z = -0.08 + sweepIn * 0.11 + sweepOut * 0.08;
+    // Opening composition: brief hero hold, then the machine slips past the camera.
+    const sweepReveal = smoothstep(0.0, 0.052, progress);
+    const sweepTravel = smoothstep(0.052, 0.105, progress);
+    const sweepOut = smoothstep(0.105, 0.178, progress);
+    sweep.visible = progress < 0.195;
+    sweep.position.x = lerp(-6.25, -2.0, sweepReveal) + sweepTravel * 1.55 + sweepOut * 6.6;
+    sweep.position.y = 0.72 - sweepReveal * 0.44 - sweepTravel * 0.22 + sweepOut * 0.82;
+    sweep.position.z = 8.05 - sweepReveal * 1.55 - sweepTravel * 0.82 + sweepOut * 0.5;
+    sweep.rotation.y = -0.15 + sweepReveal * 0.12 + sweepTravel * 0.11 + sweepOut * 0.07;
+    sweep.rotation.z = -0.075 + sweepReveal * 0.035 + sweepTravel * 0.07 + sweepOut * 0.07;
     sweepPlates.forEach((plate, index) => {
-      plate.rotation.z += (index % 2 === 0 ? 1 : -1) * 0.0007;
+      plate.rotation.z += (index % 2 === 0 ? 1 : -1) * 0.00045;
     });
-    sweepLight.intensity = (1 - sweepOut) * (4.5 + sweepIn * 5.5);
+    sweepLight.intensity = (1 - sweepOut) * (3.2 + sweepReveal * 5.4);
+    coldSeamMaterial.opacity = (1 - sweepOut) * (0.16 + sweepTravel * 0.18);
+    openingSpot.intensity = (1 - smoothstep(0.17, 0.25, progress)) * (3.8 + sweepReveal * 3.1);
 
-    // Hatch unlock sequence stays subtle until the final latch releases.
+    // Hatch unlock: each latch changes both position and color, then the warm confirmation ring flashes once.
     const unlockMaster = smoothstep(0.055, 0.17, progress);
     for (let i = 0; i < 8; i += 1) {
       const angle = (i / 8) * Math.PI * 2;
-      const local = clamp(unlockMaster * 1.55 - i * 0.075, 0, 1);
+      const local = clamp(unlockMaster * 1.58 - i * 0.078, 0, 1);
       const eased = local * local * (3 - 2 * local);
       const radius = 4.57 + eased * 0.32;
       latchDummy.position.set(Math.cos(angle) * radius, Math.sin(angle) * radius, 0.09 + eased * 0.13);
@@ -336,13 +434,20 @@ export function createEarlyCinematicRig(world: THREE.Group, hatch: THREE.Group, 
       latchDummy.scale.set(1, 1 - eased * 0.22, 1);
       latchDummy.updateMatrix();
       latchMesh.setMatrixAt(i, latchDummy.matrix);
+      latchColor.set(0x53605c).lerp(new THREE.Color(0xbcd8cf), eased * 0.9);
+      latchMesh.setColorAt(i, latchColor);
     }
     latchMesh.instanceMatrix.needsUpdate = true;
-    latchMaterial.emissiveIntensity = 0.12 + unlockMaster * 0.8;
-    lockHalo.rotation.z = -time * (0.025 + unlockMaster * 0.09);
-    lockHaloMaterial.opacity = 0.035 + unlockMaster * 0.19;
+    if (latchMesh.instanceColor) latchMesh.instanceColor.needsUpdate = true;
+    latchMaterial.emissiveIntensity = 0.1 + unlockMaster * 0.72;
+    lockHalo.rotation.z = -time * (0.022 + unlockMaster * 0.08);
+    lockHaloMaterial.opacity = 0.028 + unlockMaster * 0.16;
+    const confirm = Math.max(0, 1 - Math.abs(progress - 0.177) / 0.035);
+    confirmHalo.rotation.z = time * 0.12;
+    confirmHaloMaterial.opacity = confirm * 0.34;
+    confirmHalo.scale.setScalar(0.985 + confirm * 0.035);
 
-    // BUILD → MEASURE → SHIP as one designed object instead of three unrelated effects.
+    // BUILD → MEASURE → SHIP as one authored specimen.
     const appear = smoothstep(0.245, 0.33, progress);
     const build = smoothstep(0.27, 0.36, progress);
     const measure = smoothstep(0.37, 0.50, progress);
@@ -351,57 +456,56 @@ export function createEarlyCinematicRig(world: THREE.Group, hatch: THREE.Group, 
     const visibility = appear * fade;
     dataRig.visible = progress > 0.215 && progress < 0.775;
 
-    dataRig.rotation.y = -0.28 + time * 0.065 + measure * 0.36;
-    dataRig.rotation.x = -0.05 + Math.sin(time * 0.31) * 0.022;
-    dataRig.position.x = -0.45 + measure * 0.42 + ship * 0.82;
-    dataRig.position.y = 0.12 + Math.sin(time * 0.48) * 0.055 + ship * 0.24;
-    dataRig.scale.setScalar((0.74 + appear * 0.28) * (1 - ship * 0.055));
+    dataRig.rotation.y = -0.34 + time * 0.052 + measure * 0.3;
+    dataRig.rotation.x = -0.04 + Math.sin(time * 0.28) * 0.018;
+    dataRig.position.x = -0.52 + measure * 0.34 + ship * 0.76;
+    dataRig.position.y = 0.05 + Math.sin(time * 0.42) * 0.045 + ship * 0.2;
+    dataRig.scale.setScalar((0.76 + appear * 0.26) * (1 - ship * 0.05));
 
     shellMaterial.uniforms.uTime.value = time;
     shellMaterial.uniforms.uMeasure.value = measure;
     shellMaterial.uniforms.uShip.value = ship;
     shellMaterial.uniforms.uOpacity.value = visibility;
 
-    innerShellMaterial.opacity = visibility * (0.018 + measure * 0.15 - ship * 0.07);
-    innerShell.rotation.y = -time * (0.035 + measure * 0.08);
-    pointMaterial.opacity = visibility * (measure * 0.4 + ship * 0.08);
-    dataPoints.rotation.y = -time * (0.045 + measure * 0.11);
+    innerShellMaterial.opacity = visibility * (0.012 + measure * 0.13 - ship * 0.06);
+    innerShell.rotation.y = -time * (0.03 + measure * 0.07);
+    pointMaterial.opacity = visibility * (measure * 0.32 + ship * 0.06);
+    dataPoints.rotation.y = -time * (0.04 + measure * 0.1);
 
     const scanTravel = clamp((measure - 0.03) / 0.94, 0, 1);
-    scanRing.position.y = lerp(2.25, -2.25, scanTravel);
-    scanRing.scale.setScalar(0.68 + Math.sin(scanTravel * Math.PI) * 0.36);
-    scanRingMaterial.opacity = visibility * Math.sin(scanTravel * Math.PI) * 0.58;
+    scanRing.position.y = lerp(2.2, -2.2, scanTravel);
+    scanRing.scale.setScalar(0.66 + Math.sin(scanTravel * Math.PI) * 0.34);
+    scanRingMaterial.opacity = visibility * Math.sin(scanTravel * Math.PI) * 0.5;
 
-    core.rotation.x = 0.25 + time * 0.14;
-    core.rotation.y = 0.5 + time * 0.22;
-    core.scale.setScalar(0.74 + appear * 0.22 + ship * 0.08);
-    coreMaterial.emissiveIntensity = 0.42 + appear * 0.45 + measure * 0.35 + ship * 1.25;
-    coreHalo.scale.setScalar(0.9 + Math.sin(time * 0.8) * 0.025 + ship * 0.12);
-    coreHaloMaterial.opacity = visibility * (0.045 + measure * 0.06 + ship * 0.11);
+    core.rotation.x = 0.25 + time * 0.12;
+    core.rotation.y = 0.5 + time * 0.19;
+    core.scale.setScalar(0.73 + appear * 0.21 + ship * 0.07);
+    coreMaterial.emissiveIntensity = 0.38 + appear * 0.4 + measure * 0.3 + ship * 1.2;
+    coreHalo.scale.setScalar(0.9 + Math.sin(time * 0.72) * 0.022 + ship * 0.1);
+    coreHaloMaterial.opacity = visibility * (0.035 + measure * 0.052 + ship * 0.09);
 
     orbits.forEach((orbit, index) => {
-      orbit.rotation.z += (index % 2 === 0 ? 1 : -1) * (0.0008 + measure * 0.0025 + ship * 0.004);
-      (orbit.material as THREE.MeshBasicMaterial).opacity = visibility * (0.055 + build * 0.05 + measure * 0.055 + ship * 0.035);
+      orbit.rotation.z += (index % 2 === 0 ? 1 : -1) * (0.0006 + measure * 0.0018 + ship * 0.0032);
+      (orbit.material as THREE.MeshBasicMaterial).opacity = visibility * (0.04 + build * 0.04 + measure * 0.05 + ship * 0.028);
     });
 
-    coldLight.intensity = visibility * (0.7 + measure * 3.2 + ship * 1.6);
-    warmLight.intensity = visibility * (0.45 + ship * 4.0);
+    pedestalMaterial.opacity = visibility * (0.018 + measure * 0.045 + ship * 0.018);
+    pedestal.rotation.z = time * 0.025;
+    coldLight.intensity = visibility * (0.55 + measure * 2.7 + ship * 1.2);
+    warmLight.intensity = visibility * (0.35 + ship * 3.6);
+    logicSpot.intensity = visibility * (1.4 + measure * 3.0 + ship * 2.0);
 
     fragmentSeeds.forEach((seed, i) => {
-      const angle = seed.angle + time * 0.035;
-      const preRadius = 4.2 + seed.spread;
-      const assembledRadius = 2.38 + seed.spread * 0.18;
-      const radius = lerp(preRadius, assembledRadius, build) + ship * (2.3 + seed.spread * 1.3);
-      const y = lerp(seed.height * 1.9, seed.height, build) + ship * (i % 2 === 0 ? 0.7 : -0.55);
-      const z = Math.sin(angle) * lerp(1.7, 0.72, build) + seed.depth + ship * ((i % 3) - 1) * 0.65;
-      fragmentDummy.position.set(
-        Math.cos(angle) * radius + ship * 1.25,
-        y,
-        z,
-      );
-      fragmentDummy.rotation.set(angle * 0.24 + measure * 0.42, 0.2 + angle, angle * 0.7 + ship * 1.1);
-      const scale = visibility * (0.72 + build * 0.28);
-      fragmentDummy.scale.set(scale, scale * (1 + ship * 1.0), scale * 0.85);
+      const angle = seed.angle + time * 0.028;
+      const preRadius = 4.15 + seed.spread;
+      const assembledRadius = 2.34 + seed.spread * 0.16;
+      const radius = lerp(preRadius, assembledRadius, build) + ship * (2.18 + seed.spread * 1.22);
+      const y = lerp(seed.height * 1.82, seed.height, build) + ship * (i % 2 === 0 ? 0.64 : -0.5);
+      const z = Math.sin(angle) * lerp(1.62, 0.68, build) + seed.depth + ship * ((i % 3) - 1) * 0.6;
+      fragmentDummy.position.set(Math.cos(angle) * radius + ship * 1.18, y, z);
+      fragmentDummy.rotation.set(angle * 0.2 + measure * 0.34, 0.16 + angle, angle * 0.62 + ship * 1.0);
+      const scale = visibility * (0.7 + build * 0.28);
+      fragmentDummy.scale.set(scale, scale * (1 + ship * 0.9), scale * 0.8);
       fragmentDummy.updateMatrix();
       fragments.setMatrixAt(i, fragmentDummy.matrix);
     });
