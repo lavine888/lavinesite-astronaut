@@ -6,8 +6,11 @@
   place-items: center;
   overflow: hidden;
   pointer-events: none;
-  background: #030303;
-  animation: bootExit 2.15s cubic-bezier(.72,0,.2,1) forwards;
+  background:
+    radial-gradient(circle at 50% 52%, rgba(102, 74, 38, .13), transparent 28%),
+    linear-gradient(180deg, #050403, #020202 58%, #000);
+  clip-path: inset(0 0 0 0);
+  animation: bootExit 2.85s cubic-bezier(.72,0,.18,1) forwards;
 }
 
 .bootSequence::before,
@@ -20,86 +23,103 @@
 }
 
 .bootSequence::before {
-  width: min(62vw, 860px);
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(179,145,94,.18) 14%, rgba(218,198,158,.76) 50%, rgba(179,145,94,.18) 86%, transparent);
+  width: min(72vw, 980px);
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(134,101,57,.2) 8%, rgba(199,158,96,.72) 42%, rgba(243,224,184,.98) 50%, rgba(199,158,96,.72) 58%, rgba(134,101,57,.2) 92%, transparent);
+  box-shadow: 0 0 26px rgba(188,145,82,.28);
   transform: translate(-50%, -50%) scaleX(0);
   transform-origin: center;
-  animation: bootLine 1.32s cubic-bezier(.2,.75,.18,1) .18s forwards;
+  animation: bootLine 1.55s cubic-bezier(.18,.8,.18,1) .22s forwards;
 }
 
 .bootSequence::after {
-  width: min(68vw, 920px);
+  width: min(60vw, 760px);
   aspect-ratio: 1;
-  border: 1px solid rgba(177,143,89,.06);
+  border: 1px solid rgba(194,155,95,.16);
   border-radius: 50%;
-  box-shadow: inset 0 0 90px rgba(152,118,65,.025);
-  transform: translate(-50%, -50%) scale(.72);
+  box-shadow:
+    0 0 80px rgba(139,101,51,.12),
+    inset 0 0 120px rgba(162,120,63,.055);
+  transform: translate(-50%, -50%) scale(.55);
   opacity: 0;
-  animation: bootHalo 1.65s ease-out .24s forwards;
+  animation: bootHalo 1.95s cubic-bezier(.2,.7,.2,1) .28s forwards;
 }
 
 .bootCore {
   position: relative;
   z-index: 2;
-  width: min(560px, 72vw);
+  width: min(680px, 78vw);
   display: grid;
   justify-items: center;
-  gap: 12px;
+  gap: 14px;
   text-align: center;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   text-transform: uppercase;
 }
 
-.bootCore span {
-  color: rgba(218,196,156,.42);
-  font-size: 8px;
-  letter-spacing: .42em;
+.bootCore::before {
+  content: "ARCHIVE // INITIALIZING";
+  position: absolute;
+  top: -58px;
+  color: rgba(182,143,86,.32);
+  font-size: 7px;
+  letter-spacing: .52em;
   opacity: 0;
-  animation: bootText .55s ease .2s forwards;
+  animation: bootText .45s ease .16s forwards;
+}
+
+.bootCore span {
+  color: rgba(203,168,112,.56);
+  font-size: 8px;
+  letter-spacing: .48em;
+  opacity: 0;
+  animation: bootText .5s ease .25s forwards;
 }
 
 .bootCore b {
-  color: rgba(239,235,224,.92);
-  font-size: clamp(18px, 2.4vw, 31px);
+  color: rgba(245,238,223,.96);
+  font-size: clamp(26px, 4vw, 54px);
   font-weight: 500;
+  line-height: 1;
   letter-spacing: .18em;
+  text-shadow: 0 0 28px rgba(179,139,77,.12);
   opacity: 0;
-  transform: translateY(8px);
-  animation: bootTitle .66s cubic-bezier(.2,.76,.2,1) .42s forwards;
+  transform: translateY(13px) scale(.97);
+  animation: bootTitle .74s cubic-bezier(.16,.82,.2,1) .48s forwards;
 }
 
 .bootCore small {
-  color: rgba(255,255,255,.24);
+  color: rgba(255,255,255,.3);
   font-size: 7px;
-  letter-spacing: .25em;
+  letter-spacing: .28em;
   opacity: 0;
-  animation: bootText .52s ease .82s forwards;
+  animation: bootText .5s ease .92s forwards;
 }
 
 .bootStatus {
-  margin-top: 17px;
-  width: min(300px, 62vw);
-  height: 1px;
+  margin-top: 22px;
+  width: min(390px, 66vw);
+  height: 2px;
   overflow: hidden;
   background: rgba(255,255,255,.065);
+  box-shadow: 0 0 18px rgba(153,112,57,.08);
   opacity: 0;
-  animation: bootText .3s ease .5s forwards;
+  animation: bootText .3s ease .55s forwards;
 }
 
 .bootStatus i {
   display: block;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, rgba(114,91,56,.2), rgba(190,155,99,.92), rgba(229,214,184,.72));
+  background: linear-gradient(90deg, rgba(92,67,35,.35), rgba(181,138,77,.95), rgba(236,216,177,.9));
   transform: translateX(-100%);
-  animation: bootProgress 1.05s cubic-bezier(.36,.05,.2,1) .54s forwards;
+  animation: bootProgress 1.22s cubic-bezier(.36,.05,.16,1) .64s forwards;
 }
 
 .transitionVeil {
   position: fixed;
   inset: 0;
-  z-index: 22;
+  z-index: 92;
   overflow: hidden;
   pointer-events: none;
   isolation: isolate;
@@ -114,13 +134,30 @@
   pointer-events: none;
 }
 
+/* THRESHOLD -> LOGIC: blackout around a bright aperture, then tear through it. */
 .breachCut {
-  opacity: calc(var(--breach, 0) * .94);
+  opacity: calc(var(--breach, 0) * 1.3);
   background:
-    radial-gradient(circle at 50% 50%, rgba(218,197,157,.26) 0 1%, rgba(160,128,77,.09) 7%, transparent 25%),
-    radial-gradient(circle at 50% 50%, transparent 0 24%, rgba(2,2,2,.64) 43%, rgba(0,0,0,.94) 72%, transparent 82%);
-  transform: scale(calc(.91 + var(--breach, 0) * .14));
-  mix-blend-mode: screen;
+    radial-gradient(circle at 50% 50%, rgba(242,225,191,.72) 0 1.2%, rgba(181,137,77,.3) 5%, rgba(70,48,23,.12) 12%, transparent 22%),
+    radial-gradient(circle at 50% 50%, transparent 0 19%, rgba(0,0,0,.42) 29%, rgba(0,0,0,.88) 55%, rgba(0,0,0,.98) 82%);
+  transform: scale(calc(.86 + var(--breach, 0) * .18));
+}
+
+.breachCut::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(66vw, 820px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid rgba(229,205,162,.72);
+  box-shadow:
+    0 0 18px rgba(223,187,126,.3),
+    0 0 70px rgba(151,107,52,.22),
+    inset 0 0 55px rgba(217,177,111,.08);
+  transform: translate(-50%, -50%) scale(calc(.56 + var(--breach, 0) * .72));
+  opacity: calc(var(--breach, 0) * 1.15);
 }
 
 .breachCut::after {
@@ -128,64 +165,109 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  width: min(52vw, 650px);
+  width: min(22vw, 260px);
   aspect-ratio: 1;
   border-radius: 50%;
-  border: 1px solid rgba(213,188,145,.42);
-  box-shadow: 0 0 44px rgba(156,119,66,.14), inset 0 0 54px rgba(201,169,112,.05);
-  transform: translate(-50%, -50%) scale(calc(.74 + var(--breach, 0) * .54));
-  opacity: calc(var(--breach, 0) * .72);
+  background: radial-gradient(circle, rgba(250,239,215,.95), rgba(194,151,88,.3) 18%, transparent 68%);
+  box-shadow: 0 0 70px rgba(202,158,91,.28);
+  transform: translate(-50%, -50%) scale(calc(.28 + var(--breach, 0) * .94));
+  opacity: calc(var(--breach, 0) * .9);
 }
 
+/* LOGIC cut: a full-height scan blade with a brief exposure drop either side. */
 .logicCut {
-  opacity: calc(var(--logic-cut, 0) * .78);
+  opacity: calc(var(--logic-cut, 0) * 1.2);
   background:
-    linear-gradient(90deg, transparent 0 47.8%, rgba(179,142,86,.12) 49%, rgba(232,217,187,.42) 50%, rgba(179,142,86,.12) 51%, transparent 52.2%),
-    linear-gradient(90deg, rgba(0,0,0,.64), transparent 20%, transparent 80%, rgba(0,0,0,.64));
-  transform: translateX(calc((1 - var(--logic-cut, 0)) * -6%));
+    linear-gradient(90deg,
+      rgba(0,0,0,.96) 0%,
+      rgba(0,0,0,.72) 28%,
+      rgba(92,65,31,.18) 45%,
+      rgba(231,207,163,.5) 49.7%,
+      rgba(255,245,222,.9) 50%,
+      rgba(231,207,163,.5) 50.3%,
+      rgba(92,65,31,.18) 55%,
+      rgba(0,0,0,.72) 72%,
+      rgba(0,0,0,.96) 100%);
+  transform: translateX(calc((1 - var(--logic-cut, 0)) * -12%)) scaleX(calc(.76 + var(--logic-cut, 0) * .24));
+  transform-origin: center;
+}
+
+.logicCut::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -10%;
+  width: min(16vw, 190px);
+  height: 120%;
+  background: linear-gradient(90deg, transparent, rgba(166,121,62,.12), rgba(235,214,176,.34), rgba(166,121,62,.12), transparent);
+  transform: translateX(-50%) scaleX(calc(.32 + var(--logic-cut, 0) * .68));
+  opacity: calc(var(--logic-cut, 0) * .95);
 }
 
 .logicCut::after {
   content: "";
   position: absolute;
   left: 50%;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: rgba(226,210,177,.72);
-  box-shadow: 0 0 22px rgba(177,137,77,.32);
-  transform: scaleY(calc(.28 + var(--logic-cut, 0) * .72));
+  top: -8%;
+  width: 2px;
+  height: 116%;
+  background: rgba(247,231,199,.95);
+  box-shadow: 0 0 18px rgba(220,178,111,.62), 0 0 48px rgba(154,108,51,.4);
+  transform: translateX(-50%) scaleY(calc(.12 + var(--logic-cut, 0) * .88));
   transform-origin: center;
 }
 
+/* LOGIC -> ARTIFACTS: two heavy diagonal archive doors nearly close, then release. */
 .vaultCut {
-  opacity: calc(var(--vault-cut, 0) * .88);
+  opacity: calc(var(--vault-cut, 0) * 1.15);
+}
+
+.vaultCut::before,
+.vaultCut::after {
+  content: "";
+  position: absolute;
+  top: -12%;
+  bottom: -12%;
+  width: 68%;
   background:
-    linear-gradient(116deg, transparent 0 37%, rgba(2,2,2,.88) 43%, rgba(74,55,31,.58) 49.7%, rgba(181,141,82,.18) 50%, rgba(2,2,2,.9) 50.3%, rgba(2,2,2,.62) 57%, transparent 63%);
-  transform: translateX(calc((1 - var(--vault-cut, 0)) * 13%)) scale(1.06);
+    linear-gradient(112deg, rgba(7,5,3,.99), rgba(20,14,8,.98) 68%, rgba(91,63,31,.88) 96%, rgba(179,133,72,.32));
+  box-shadow: 0 0 60px rgba(0,0,0,.65);
+}
+
+.vaultCut::before {
+  left: -16%;
+  clip-path: polygon(0 0, 100% 0, 82% 100%, 0 100%);
+  transform: translateX(calc((1 - var(--vault-cut, 0)) * -54%));
+}
+
+.vaultCut::after {
+  right: -16%;
+  clip-path: polygon(18% 0, 100% 0, 100% 100%, 0 100%);
+  transform: translateX(calc((1 - var(--vault-cut, 0)) * 54%));
 }
 
 .alloyGrade {
   z-index: -1;
-  opacity: calc((1 - var(--gateway, 0)) * .68);
+  opacity: calc((1 - var(--gateway, 0)) * .82);
   background:
-    radial-gradient(circle at 72% 58%, rgba(121,88,47,.08), transparent 31%),
-    radial-gradient(circle at 18% 28%, rgba(188,171,137,.035), transparent 28%),
-    linear-gradient(115deg, rgba(24,17,10,.055), transparent 34%, rgba(67,49,27,.055));
+    radial-gradient(circle at 68% 58%, rgba(111,78,40,.12), transparent 30%),
+    radial-gradient(circle at 18% 28%, rgba(181,157,113,.045), transparent 26%),
+    linear-gradient(115deg, rgba(28,19,10,.08), transparent 34%, rgba(75,52,26,.075));
   mix-blend-mode: soft-light;
 }
 
 @keyframes bootLine {
   0% { transform: translate(-50%, -50%) scaleX(0); opacity: 0; }
-  18% { opacity: 1; }
-  72% { transform: translate(-50%, -50%) scaleX(1); opacity: 1; }
-  100% { transform: translate(-50%, -50%) scaleX(1); opacity: .15; }
+  16% { opacity: 1; }
+  70% { transform: translate(-50%, -50%) scaleX(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scaleX(1); opacity: .28; }
 }
 
 @keyframes bootHalo {
-  0% { opacity: 0; transform: translate(-50%, -50%) scale(.72); }
-  42% { opacity: .58; }
-  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.04); }
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.55); }
+  34% { opacity: .76; }
+  72% { opacity: .28; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.15); }
 }
 
 @keyframes bootText {
@@ -193,29 +275,49 @@
 }
 
 @keyframes bootTitle {
-  to { opacity: 1; transform: translateY(0); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 @keyframes bootProgress {
   to { transform: translateX(0); }
 }
 
+/* Reveal the live scene through a collapsing horizontal slit instead of a plain fade. */
 @keyframes bootExit {
-  0%, 73% { opacity: 1; visibility: visible; }
-  100% { opacity: 0; visibility: hidden; }
+  0%, 68% {
+    opacity: 1;
+    visibility: visible;
+    clip-path: inset(0 0 0 0);
+  }
+  78% {
+    opacity: 1;
+    clip-path: inset(34% 0 34% 0);
+  }
+  91% {
+    opacity: .98;
+    clip-path: inset(48.5% 0 48.5% 0);
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+    clip-path: inset(50% 0 50% 0);
+  }
 }
 
 @media (max-width: 760px) {
-  .bootSequence { animation-duration: 1.6s; }
-  .breachCut::after { width: 76vw; }
-  .logicCut { opacity: calc(var(--logic-cut, 0) * .52); }
-  .vaultCut { opacity: calc(var(--vault-cut, 0) * .58); }
+  .bootSequence { animation-duration: 2.2s; }
+  .bootCore b { font-size: clamp(22px, 7vw, 36px); }
+  .breachCut::before { width: 92vw; }
+  .breachCut::after { width: 34vw; }
+  .logicCut { opacity: calc(var(--logic-cut, 0) * .92); }
+  .vaultCut { opacity: calc(var(--vault-cut, 0) * .86); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bootSequence { animation-duration: .36s; }
+  .bootSequence { animation-duration: .42s; }
   .bootSequence::before,
   .bootSequence::after,
+  .bootCore::before,
   .bootCore span,
   .bootCore b,
   .bootCore small,
