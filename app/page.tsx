@@ -5,6 +5,7 @@ import SceneCanvas from "./scene-canvas";
 import styles from "./page.module.css";
 import cinematic from "./cinematic.module.css";
 import archiveFx from "./archive-transitions.module.css";
+import archiveMaterial from "./archive-material.module.css";
 
 const MAIN_PROFILE = "https://lavine-site.vercel.app/profile";
 const SCENE_LABELS = ["ORIGIN", "THRESHOLD", "LOGIC", "ARTIFACTS", "GATEWAY"];
@@ -134,10 +135,10 @@ export default function LavineArchive() {
     <main ref={stageRef} data-scene={activeScene} className={`${styles.stage} ${cinematic.stageBoost}`}>
       <SceneCanvas />
 
-      <div className={archiveFx.archiveBackdrop} aria-hidden="true">
-        <div className={archiveFx.vaultPerspective} />
-        <div className={archiveFx.goldAtmosphere} />
-        <div className={archiveFx.depthSlabs} />
+      <div className={`${archiveFx.archiveBackdrop} ${archiveMaterial.backdropRefined}`} aria-hidden="true">
+        <div className={`${archiveFx.vaultPerspective} ${archiveMaterial.perspectiveRefined}`} />
+        <div className={`${archiveFx.goldAtmosphere} ${archiveMaterial.atmosphereRefined}`} />
+        <div className={`${archiveFx.depthSlabs} ${archiveMaterial.slabsRefined}`} />
       </div>
 
       <div className={archiveFx.bootSequence} aria-hidden="true">
