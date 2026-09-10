@@ -90,6 +90,8 @@ export default function LavineArchive() {
       stage.style.setProperty("--story-progress", current.toFixed(4));
       stage.style.setProperty("--gateway", clamp((current - 0.78) / 0.22, 0, 1).toFixed(4));
       stage.style.setProperty("--scan", `${((current * 112) % 100).toFixed(3)}%`);
+      stage.style.setProperty("--drift-x", `${((current - 0.5) * 42).toFixed(2)}px`);
+      stage.style.setProperty("--drift-y", `${(Math.sin(current * Math.PI * 3) * 18).toFixed(2)}px`);
 
       const position = current * (SCENE_LABELS.length - 1);
       const nextScene = clamp(Math.round(position), 0, SCENE_LABELS.length - 1);
@@ -151,6 +153,62 @@ export default function LavineArchive() {
         <span>{sceneMeta.code}</span>
         <strong>{sceneMeta.note}</strong>
         <small>{sceneMeta.coord}</small>
+      </div>
+
+      <div className={cinematic.earlyWorld} aria-hidden="true">
+        <div className={cinematic.depthSlices}>
+          <i /><i /><i /><i /><i /><i />
+        </div>
+
+        <div className={cinematic.originRig}>
+          <div className={`${cinematic.orbit} ${cinematic.orbitA}`} />
+          <div className={`${cinematic.orbit} ${cinematic.orbitB}`} />
+          <div className={`${cinematic.orbit} ${cinematic.orbitC}`} />
+          <div className={cinematic.originCore}>
+            <span>IDENTITY SIGNAL</span>
+            <b>LX-888</b>
+            <small>HANDSHAKE / 98.4%</small>
+          </div>
+          <div className={`${cinematic.originSlab} ${cinematic.slabLeft}`}>
+            <span>ORIGIN VECTOR</span>
+            <b>HK / SZ</b>
+            <i />
+          </div>
+          <div className={`${cinematic.originSlab} ${cinematic.slabRight}`}>
+            <span>ARCHIVE CHANNEL</span>
+            <b>OPEN</b>
+            <i />
+          </div>
+        </div>
+
+        <div className={cinematic.thresholdRig}>
+          <div className={`${cinematic.thresholdRing} ${cinematic.thresholdRingA}`} />
+          <div className={`${cinematic.thresholdRing} ${cinematic.thresholdRingB}`} />
+          <div className={`${cinematic.thresholdRing} ${cinematic.thresholdRingC}`} />
+          <div className={`${cinematic.thresholdAxis} ${cinematic.axisHorizontal}`} />
+          <div className={`${cinematic.thresholdAxis} ${cinematic.axisVertical}`} />
+          <div className={cinematic.sealReadout}>
+            <span>MECHANICAL SEAL</span>
+            <b>08 / 08</b>
+            <small>PRESSURE EQUALIZED</small>
+          </div>
+          <div className={cinematic.thresholdRail}>
+            <i /><i /><i /><i /><i /><i /><i /><i />
+          </div>
+        </div>
+
+        <div className={cinematic.logicRig}>
+          <div className={cinematic.logicTrace} />
+          <div className={cinematic.logicNode}>
+            <span>01</span><b>FORM</b><i /><small>PRODUCT / SYSTEM</small>
+          </div>
+          <div className={cinematic.logicNode}>
+            <span>02</span><b>TEST</b><i /><small>EVIDENCE / SIGNAL</small>
+          </div>
+          <div className={cinematic.logicNode}>
+            <span>03</span><b>RELEASE</b><i /><small>REAL WORLD / LOOP</small>
+          </div>
+        </div>
       </div>
 
       <header className={styles.header}>
