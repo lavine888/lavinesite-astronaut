@@ -1,0 +1,73 @@
+.handoff {
+  position: fixed;
+  inset: 0;
+  z-index: 180;
+  pointer-events: none;
+  opacity: 0;
+  overflow: hidden;
+  background: #010203;
+}
+
+.active {
+  opacity: 1;
+  animation: handoffFade .72s cubic-bezier(.2,.7,.2,1) forwards;
+}
+
+.handoff::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18vmin;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(.18);
+  background:
+    radial-gradient(circle, rgba(238,248,244,.95) 0 4%, rgba(136,187,177,.74) 8%, rgba(116,83,46,.42) 21%, rgba(5,8,8,.96) 48%, #010203 70%);
+  box-shadow:
+    0 0 80px rgba(145,190,181,.22),
+    0 0 180px rgba(146,106,58,.16);
+}
+
+.active::before {
+  animation: portalTakeover .72s cubic-bezier(.13,.74,.18,1) forwards;
+}
+
+.handoff::after {
+  content: "ENTERING / PROFILE";
+  position: absolute;
+  left: 50%;
+  bottom: 9vh;
+  transform: translateX(-50%);
+  font-size: 9px;
+  letter-spacing: .28em;
+  color: rgba(224,219,206,.45);
+  opacity: 0;
+}
+
+.active::after {
+  animation: handoffLabel .58s ease .08s forwards;
+}
+
+@keyframes portalTakeover {
+  0% { transform: translate(-50%, -50%) scale(.18); filter: blur(0); }
+  38% { transform: translate(-50%, -50%) scale(1.8); filter: blur(.5px); }
+  100% { transform: translate(-50%, -50%) scale(18); filter: blur(2px); }
+}
+
+@keyframes handoffFade {
+  0% { opacity: 0; }
+  12%, 100% { opacity: 1; }
+}
+
+@keyframes handoffLabel {
+  0% { opacity: 0; transform: translate(-50%, 8px); }
+  45% { opacity: .7; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, -4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .active { animation-duration: .18s; }
+  .active::before { animation-duration: .18s; }
+  .active::after { display: none; }
+}
