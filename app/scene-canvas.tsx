@@ -7,6 +7,7 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { createEarlyCinematicRig } from "./early-cinematic-rig";
+import { createArtifactSpecimens } from "./artifact-specimens";
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -418,62 +419,7 @@ export default function SceneCanvas() {
       hallBeams.push(beam);
     });
 
-    const artifactGroup = new THREE.Group();
-    world.add(artifactGroup);
-    const artifactZ = [-25.5, -29.8, -34.1, -38.2];
-    const artifactObjects: THREE.Group[] = [];
-    const artifactLights: THREE.PointLight[] = [];
-    const artifactGeometries: THREE.BufferGeometry[] = [
-      new THREE.IcosahedronGeometry(1.12, 1),
-      new THREE.TorusKnotGeometry(0.78, 0.22, 64, 8, 2, 3),
-      new THREE.DodecahedronGeometry(1.08, 0),
-      new THREE.OctahedronGeometry(1.2, 1),
-    ];
-
-    artifactZ.forEach((z, index) => {
-      const g = new THREE.Group();
-      const coreMaterial = new THREE.MeshPhysicalMaterial({
-        color: index === 2 ? 0x8e7655 : 0x849894,
-        roughness: 0.18,
-        metalness: 0.78,
-        clearcoat: 0.82,
-        clearcoatRoughness: 0.16,
-        transparent: true,
-        opacity: 0.7,
-      });
-      const core = new THREE.Mesh(artifactGeometries[index], coreMaterial);
-      g.add(core);
-
-      const wire = new THREE.LineSegments(
-        new THREE.EdgesGeometry(artifactGeometries[index], 18),
-        new THREE.LineBasicMaterial({ color: 0xe3ebe4, transparent: true, opacity: 0.38 }),
-      );
-      wire.scale.setScalar(1.04);
-      g.add(wire);
-
-      const halo = new THREE.Mesh(
-        new THREE.TorusGeometry(1.8, 0.025, 6, 56),
-        new THREE.MeshBasicMaterial({ color: 0xc8d5d0, transparent: true, opacity: 0.23 }),
-      );
-      halo.rotation.x = Math.PI / 2;
-      g.add(halo);
-
-      const flare = new THREE.Sprite(glowMaterial.clone());
-      flare.position.set(0, 0, -0.6);
-      flare.scale.set(3.2, 3.2, 1);
-      (flare.material as THREE.SpriteMaterial).opacity = 0.07;
-      g.add(flare);
-
-      const light = new THREE.PointLight(index === 2 ? 0xb08b5d : 0x85b3aa, 1.2, 8.5, 2.1);
-      light.position.set(0, 0.4, 0.6);
-      g.add(light);
-      artifactLights.push(light);
-
-      g.position.set(index % 2 === 0 ? 2.45 : -2.35, index % 3 === 0 ? 0.55 : -0.25, z);
-      g.rotation.z = index % 2 === 0 ? 0.08 : -0.08;
-      artifactGroup.add(g);
-      artifactObjects.push(g);
-    });
+    const artifactRig = createArtifactSpecimens(world);
 
     const starCount = isMobile ? 520 : 1180;
     const originalPositions = new Float32Array(starCount * 3);
@@ -616,8 +562,11 @@ export default function SceneCanvas() {
     let targetMouseY = 0;
     let mouseX = 0;
     let mouseY = 0;
+    let focusedArtifact = -1;
     let raf = 0;
     let running = !document.hidden;
+    let lastScrollAt = performance.now();
+    const settleAnchors = [0.235, 0.447, 0.665, 0.91];
     const clock = new THREE.Clock();
     const cameraPoint = new THREE.Vector3();
     const lookPoint = new THREE.Vector3();
@@ -625,6 +574,7 @@ export default function SceneCanvas() {
     const readScroll = () => {
       const max = document.documentElement.scrollHeight - window.innerHeight;
       targetProgress = max > 0 ? clamp(window.scrollY / max, 0, 1) : 0;
+      lastScrollAt = performance.now();
     };
 
     const onPointerMove = (event: PointerEvent) => {
@@ -632,11 +582,33 @@ export default function SceneCanvas() {
       targetMouseY = (event.clientY / Math.max(1, window.innerHeight) - 0.5) * 2;
     };
 
+    const onArtifactFocus = (event: Event) => {
+      const detail = (event as CustomEvent<number>).detail;
+      focusedArtifact = typeof detail === "number" ? detail : -1;
+    };
+
     const render = () => {
       if (!running) return;
       const dt = Math.min(clock.getDelta(), 0.05);
+      let visualTarget = targetProgress;
+      const now = performance.now();
+      if (!reducedMotion && now - lastScrollAt > 135) {
+        let nearest = settleAnchors[0];
+        let nearestDistance = Math.abs(targetProgress - nearest);
+        settleAnchors.forEach((anchor) => {
+          const distance = Math.abs(targetProgress - anchor);
+          if (distance < nearestDistance) {
+            nearest = anchor;
+            nearestDistance = distance;
+          }
+        });
+        if (nearestDistance < 0.026) {
+          visualTarget = targetProgress + (nearest - targetProgress) * Math.min(1, dt * 5.2);
+        }
+      }
+
       const smoothing = reducedMotion ? 1 : 1 - Math.pow(0.0008, dt);
-      progress += (targetProgress - progress) * smoothing;
+      progress += (visualTarget - progress) * smoothing;
       mouseX += (targetMouseX - mouseX) * Math.min(1, dt * 3.5);
       mouseY += (targetMouseY - mouseY) * Math.min(1, dt * 3.5);
 
@@ -713,15 +685,7 @@ export default function SceneCanvas() {
         material.opacity = 0.012 + Math.sin(time * 0.34 + index) * 0.005 + artifactPhase * 0.014;
       });
 
-      artifactObjects.forEach((obj, index) => {
-        obj.rotation.x = time * (0.075 + index * 0.014) + index * 0.7;
-        obj.rotation.y = time * (0.12 + index * 0.018) - index * 0.34;
-        const distance = Math.abs(camera.position.z - artifactZ[index]);
-        const focus = Math.max(0, 1 - distance / 8.5);
-        const scale = 0.78 + focus * 0.45;
-        obj.scale.setScalar(scale);
-        artifactLights[index].intensity = 0.35 + focus * 5.0;
-      });
+      artifactRig.update(time, camera.position.z, mouseX, mouseY, focusedArtifact);
 
       if (portalMorph > 0.001) {
         for (let i = 0; i < starCount * 3; i += 1) {
@@ -776,6 +740,7 @@ export default function SceneCanvas() {
     window.addEventListener("scroll", readScroll, { passive: true });
     window.addEventListener("resize", resize, { passive: true });
     window.addEventListener("pointermove", onPointerMove, { passive: true });
+    window.addEventListener("artifact-focus", onArtifactFocus as EventListener);
     document.addEventListener("visibilitychange", onVisibility);
     raf = requestAnimationFrame(render);
 
@@ -785,6 +750,7 @@ export default function SceneCanvas() {
       window.removeEventListener("scroll", readScroll);
       window.removeEventListener("resize", resize);
       window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("artifact-focus", onArtifactFocus as EventListener);
       document.removeEventListener("visibilitychange", onVisibility);
 
       world.traverse((child) => {
