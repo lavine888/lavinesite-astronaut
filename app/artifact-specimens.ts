@@ -6,6 +6,13 @@ const PALE_GOLD = 0xd0b27c;
 const GUNMETAL = 0x1a1b19;
 const SILVER = 0xa9aaa1;
 
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+const smoothstep = (a: number, b: number, value: number) => {
+  const t = clamp((value - a) / Math.max(0.0001, b - a), 0, 1);
+  return t * t * (3 - 2 * t);
+};
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
 function metal(color = GUNMETAL, roughness = 0.3, metalness = 0.88) {
   return new THREE.MeshStandardMaterial({ color, roughness, metalness });
 }
@@ -153,14 +160,27 @@ export function createArtifactSpecimens(world: THREE.Group) {
   const artifactObjects: THREE.Group[] = [];
   const artifactLights: THREE.PointLight[] = [];
   const movers: THREE.Object3D[][] = [];
+  const homePositions: THREE.Vector3[] = [];
+  const birthPositions: THREE.Vector3[] = [];
 
   factories.forEach((factory, index) => {
     const specimen = factory();
     const g = specimen.group;
-    g.position.set(index % 2 === 0 ? 2.42 : -2.35, index % 3 === 0 ? 0.52 : -0.22, artifactZ[index]);
+    const home = new THREE.Vector3(
+      index % 2 === 0 ? 2.42 : -2.35,
+      index % 3 === 0 ? 0.52 : -0.22,
+      artifactZ[index],
+    );
+    const birth = new THREE.Vector3(
+      0.5 + (index - 1.5) * 0.12,
+      0.02 + ((index % 2) * 2 - 1) * 0.09,
+      -19.1 - index * 0.28,
+    );
+    g.position.copy(birth);
     g.rotation.z = index % 2 === 0 ? 0.06 : -0.06;
+    g.scale.setScalar(0.001);
 
-    const light = new THREE.PointLight(index === 0 ? 0xb99a67 : 0x9b7747, 1.1, 8.2, 2.2);
+    const light = new THREE.PointLight(index === 0 ? 0xb99a67 : 0x9b7747, 0, 8.2, 2.2);
     light.position.set(index % 2 === 0 ? 1.25 : -1.2, 1.1, 1.2);
     g.add(light);
 
@@ -168,6 +188,8 @@ export function createArtifactSpecimens(world: THREE.Group) {
     artifactObjects.push(g);
     artifactLights.push(light);
     movers.push(specimen.movers);
+    homePositions.push(home);
+    birthPositions.push(birth);
   });
 
   const update = (
@@ -176,21 +198,51 @@ export function createArtifactSpecimens(world: THREE.Group) {
     mouseX: number,
     mouseY: number,
     focusedIndex: number,
+    storyProgress: number,
   ) => {
+    const morph = smoothstep(0.535, 0.705, storyProgress);
+    const handoffPulse = Math.sin(morph * Math.PI);
+    const visible = storyProgress > 0.5 && storyProgress < 0.865;
+
     artifactObjects.forEach((obj, index) => {
+      obj.visible = visible;
+
+      const home = homePositions[index];
+      const birth = birthPositions[index];
+      const side = index % 2 === 0 ? 1 : -1;
+      obj.position.set(
+        lerp(birth.x, home.x, morph) + side * handoffPulse * (0.28 + index * 0.055),
+        lerp(birth.y, home.y, morph) + handoffPulse * ((index % 3) - 1) * 0.22,
+        lerp(birth.z, home.z, morph) - handoffPulse * (0.34 + index * 0.12),
+      );
+
       const distance = Math.abs(cameraZ - artifactZ[index]);
       const cameraFocus = Math.max(0, 1 - distance / 8.4);
       const hoverFocus = focusedIndex === index ? 1 : 0;
       const focus = Math.max(cameraFocus, hoverFocus * 0.9);
 
-      obj.rotation.x = index * 0.12 + Math.sin(time * (0.32 + index * 0.04)) * 0.045 + hoverFocus * mouseY * 0.08;
-      obj.rotation.y = time * (0.055 + index * 0.011) - index * 0.28 + hoverFocus * mouseX * 0.16;
-      const scale = 0.76 + cameraFocus * 0.38 + hoverFocus * 0.16;
-      obj.scale.setScalar(scale);
-      artifactLights[index].intensity = 0.45 + cameraFocus * 3.6 + hoverFocus * 3.2;
+      obj.rotation.x =
+        index * 0.12 +
+        Math.sin(time * (0.32 + index * 0.04)) * 0.045 +
+        hoverFocus * mouseY * 0.08 +
+        (1 - morph) * side * 0.34;
+      obj.rotation.y =
+        time * (0.055 + index * 0.011) -
+        index * 0.28 +
+        hoverFocus * mouseX * 0.16 +
+        (1 - morph) * (index - 1.5) * 0.42;
+      obj.rotation.z = side * (0.06 + (1 - morph) * 0.22);
+
+      const settledScale = 0.76 + cameraFocus * 0.38 + hoverFocus * 0.16;
+      const birthScale = 0.08 + morph * 0.92;
+      const handoffScale = 1 + handoffPulse * 0.1;
+      obj.scale.setScalar(settledScale * birthScale * handoffScale);
+      artifactLights[index].intensity =
+        morph * (0.35 + cameraFocus * 3.6 + hoverFocus * 3.2 + handoffPulse * 1.4);
 
       movers[index].forEach((mover, moverIndex) => {
-        mover.rotation.y += 0.0012 * (moverIndex % 2 === 0 ? 1 : -1);
+        mover.rotation.y += (0.0012 + handoffPulse * 0.0018) * (moverIndex % 2 === 0 ? 1 : -1);
+        mover.rotation.x += handoffPulse * 0.0007 * (index % 2 === 0 ? 1 : -1);
       });
     });
   };
