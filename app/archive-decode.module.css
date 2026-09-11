@@ -1,0 +1,80 @@
+.decode {
+  position: relative;
+  isolation: isolate;
+}
+
+.decode::before {
+  content: attr(data-decode);
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  color: rgba(199, 157, 94, .7);
+  text-shadow: 0 0 18px rgba(151, 105, 48, .22);
+  clip-path: inset(41% 0 37% 0);
+  transform: translateX(-1.4%);
+  opacity: 0;
+  mix-blend-mode: screen;
+}
+
+.decode::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  left: -4%;
+  right: -4%;
+  top: 50%;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(132, 96, 49, .16), rgba(232, 204, 153, .85), rgba(132, 96, 49, .16), transparent);
+  box-shadow: 0 0 16px rgba(180, 132, 67, .24);
+  opacity: 0;
+  transform: translateY(-50%) scaleX(.04);
+  transform-origin: left center;
+}
+
+:global(main[data-scene="0"]) .heroDecode::before {
+  animation: decodeGhost .86s cubic-bezier(.2,.72,.2,1) 2.46s both;
+}
+
+:global(main[data-scene="0"]) .heroDecode::after {
+  animation: decodeScan .82s cubic-bezier(.18,.72,.2,1) 2.43s both;
+}
+
+:global(main[data-scene="0"]) .heroDecodeSecondary::before {
+  animation: decodeGhost .9s cubic-bezier(.2,.72,.2,1) 2.58s both;
+}
+
+:global(main[data-scene="0"]) .heroDecodeSecondary::after {
+  animation: decodeScan .86s cubic-bezier(.18,.72,.2,1) 2.55s both;
+}
+
+:global(main[data-scene="2"]) .logicDecode::before,
+:global(main[data-scene="3"]) .artifactDecode::before {
+  animation: decodeGhost .72s cubic-bezier(.2,.72,.2,1) both;
+}
+
+:global(main[data-scene="2"]) .logicDecode::after,
+:global(main[data-scene="3"]) .artifactDecode::after {
+  animation: decodeScan .68s cubic-bezier(.18,.72,.2,1) both;
+}
+
+@keyframes decodeGhost {
+  0% { opacity: 0; transform: translateX(-2.2%); }
+  18% { opacity: .72; }
+  38% { opacity: .24; transform: translateX(1.2%); }
+  52% { opacity: .62; transform: translateX(-.6%); }
+  72%, 100% { opacity: 0; transform: translateX(0); }
+}
+
+@keyframes decodeScan {
+  0% { opacity: 0; transform: translateY(-50%) scaleX(.04); }
+  12% { opacity: .84; }
+  72% { opacity: .52; transform: translateY(-50%) scaleX(1); }
+  100% { opacity: 0; transform: translateY(-50%) scaleX(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .decode::before,
+  .decode::after { display: none; }
+}
