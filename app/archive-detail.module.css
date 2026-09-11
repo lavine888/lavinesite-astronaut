@@ -1,0 +1,167 @@
+.field {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: calc((1 - var(--gateway, 0)) * .9);
+  transform: translate3d(var(--bg-parallax-x, 0px), var(--bg-parallax-y, 0px), 0);
+  transition: transform 240ms cubic-bezier(.18,.72,.2,1), opacity 500ms ease;
+  mix-blend-mode: screen;
+}
+
+.pointerAura {
+  position: absolute;
+  inset: -8%;
+  opacity: .34;
+  background:
+    radial-gradient(circle 220px at var(--pointer-x-px, 50vw) var(--pointer-y-px, 50vh),
+      rgba(226, 189, 126, .115) 0,
+      rgba(161, 116, 59, .055) 28%,
+      rgba(86, 59, 30, .018) 49%,
+      transparent 72%);
+  filter: blur(8px);
+  transform: scale(1.06);
+  transition: opacity 320ms ease;
+}
+
+.etching {
+  position: absolute;
+  inset: 7% 7% 10%;
+  opacity: .22;
+  background-image:
+    repeating-linear-gradient(90deg,
+      transparent 0 118px,
+      rgba(221, 183, 116, .032) 119px,
+      transparent 120px 247px),
+    repeating-linear-gradient(180deg,
+      transparent 0 96px,
+      rgba(229, 202, 153, .025) 97px,
+      transparent 98px 211px),
+    linear-gradient(90deg,
+      transparent 0 24%,
+      rgba(204, 163, 96, .05) 24.08% 24.16%,
+      transparent 24.24% 73%,
+      rgba(204, 163, 96, .042) 73.08% 73.16%,
+      transparent 73.24%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 53%, #000 0 22%, rgba(0,0,0,.76) 43%, transparent 78%);
+  mask-image: radial-gradient(ellipse at 50% 53%, #000 0 22%, rgba(0,0,0,.76) 43%, transparent 78%);
+  transform: perspective(1000px) rotateX(1.6deg) translate3d(var(--etch-parallax-x, 0px), var(--etch-parallax-y, 0px), 0);
+  transition: transform 320ms cubic-bezier(.18,.72,.2,1), opacity 600ms ease;
+}
+
+.rings {
+  position: absolute;
+  left: 19%;
+  right: 15%;
+  top: 14%;
+  bottom: 4%;
+  opacity: .12;
+  background:
+    repeating-radial-gradient(ellipse at 50% 53%,
+      transparent 0 96px,
+      rgba(211, 168, 98, .075) 97px,
+      transparent 98px 151px),
+    radial-gradient(ellipse at 50% 53%, transparent 0 38%, rgba(188, 143, 77, .035) 39%, transparent 40% 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 18%, #000 68%, transparent 96%);
+  mask-image: linear-gradient(180deg, transparent, #000 18%, #000 68%, transparent 96%);
+  transform: translate3d(calc(var(--bg-parallax-x, 0px) * -.35), calc(var(--bg-parallax-y, 0px) * -.35), 0) scale(1.06);
+}
+
+.ribs {
+  position: absolute;
+  inset: 0;
+  opacity: .5;
+}
+
+.ribs i {
+  position: absolute;
+  top: var(--top, 15%);
+  bottom: var(--bottom, 12%);
+  left: var(--left, 50%);
+  width: 1px;
+  background: linear-gradient(180deg,
+    transparent,
+    rgba(192, 145, 79, .035) 8%,
+    rgba(226, 188, 122, .17) 37%,
+    rgba(116, 78, 39, .06) 71%,
+    transparent);
+  box-shadow: 0 0 9px rgba(150, 103, 51, .035);
+  transform: skewY(var(--skew, 0deg));
+}
+
+.ribs i::before,
+.ribs i::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  border: 1px solid rgba(213, 173, 105, .20);
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: rgba(12, 10, 7, .66);
+  box-shadow: 0 0 12px rgba(170, 121, 57, .08);
+}
+
+.ribs i::before { top: 31%; }
+.ribs i::after { top: 73%; width: 3px; height: 3px; opacity: .62; }
+
+.ribs i:nth-child(1) { --left: 12%; --top: 26%; --bottom: 17%; --skew: -4deg; opacity: .46; }
+.ribs i:nth-child(2) { --left: 23.5%; --top: 12%; --bottom: 28%; --skew: -2deg; opacity: .72; }
+.ribs i:nth-child(3) { --left: 37%; --top: 22%; --bottom: 9%; --skew: -.6deg; opacity: .36; }
+.ribs i:nth-child(4) { --left: 63.5%; --top: 13%; --bottom: 19%; --skew: .8deg; opacity: .43; }
+.ribs i:nth-child(5) { --left: 77%; --top: 23%; --bottom: 8%; --skew: 2.2deg; opacity: .68; }
+.ribs i:nth-child(6) { --left: 89%; --top: 17%; --bottom: 24%; --skew: 4deg; opacity: .4; }
+
+.ledger {
+  position: absolute;
+  left: 9%;
+  right: 8%;
+  top: 18%;
+  bottom: 12%;
+  opacity: .28;
+  border-top: 1px solid rgba(202, 158, 91, .045);
+  border-bottom: 1px solid rgba(202, 158, 91, .035);
+  background:
+    linear-gradient(90deg, transparent 0 8%, rgba(210, 169, 103, .11) 8.1% 8.18%, transparent 8.26% 48%, rgba(210, 169, 103, .07) 48.08% 48.14%, transparent 48.22% 91%, rgba(210, 169, 103, .09) 91.08% 91.16%, transparent 91.24%),
+    linear-gradient(180deg, transparent 0 36%, rgba(217, 180, 116, .05) 36.1% 36.2%, transparent 36.3% 82%, rgba(217, 180, 116, .04) 82.1% 82.2%, transparent 82.3%);
+}
+
+:global(main[data-scene="0"]) .etching { opacity: .17; }
+:global(main[data-scene="0"]) .rings { opacity: .07; }
+:global(main[data-scene="0"]) .ribs { opacity: .34; }
+:global(main[data-scene="0"]) .pointerAura { opacity: .26; }
+
+:global(main[data-scene="1"]) .etching { opacity: .25; }
+:global(main[data-scene="1"]) .rings { opacity: .10; }
+:global(main[data-scene="1"]) .ribs { opacity: .48; }
+:global(main[data-scene="1"]) .pointerAura { opacity: .24; }
+
+:global(main[data-scene="2"]) .etching { opacity: .31; }
+:global(main[data-scene="2"]) .rings { opacity: .16; }
+:global(main[data-scene="2"]) .ribs { opacity: .62; }
+:global(main[data-scene="2"]) .pointerAura { opacity: .42; }
+
+:global(main[data-scene="3"]) .etching { opacity: .28; }
+:global(main[data-scene="3"]) .rings { opacity: .13; }
+:global(main[data-scene="3"]) .ribs { opacity: .56; }
+:global(main[data-scene="3"]) .pointerAura { opacity: .38; }
+
+:global(main[data-scene="4"]) .field { opacity: 0; }
+
+@media (max-width: 760px) {
+  .field { opacity: calc((1 - var(--gateway, 0)) * .68); }
+  .pointerAura { display: none; }
+  .etching { opacity: .13; inset: 8% 4% 11%; }
+  .rings { opacity: .06; left: 8%; right: 8%; }
+  .ribs i:nth-child(1),
+  .ribs i:nth-child(3),
+  .ribs i:nth-child(4),
+  .ribs i:nth-child(6) { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .field,
+  .etching { transition: none; transform: none; }
+  .pointerAura { display: none; }
+}
