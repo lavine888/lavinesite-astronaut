@@ -8,16 +8,20 @@
   pointer-events: none;
   transform-style: preserve-3d;
   transform:
-    translate3d(calc(-50% - (12vw * var(--seal-travel, 0))), -50%, 0)
+    translate3d(
+      calc(-50% - (12vw * var(--seal-travel, 0)) + var(--seal-pointer-x, 0px)),
+      calc(-50% + var(--seal-pointer-y, 0px)),
+      0
+    )
     scale(calc(.82 + (.72 * var(--seal-travel, 0))))
-    rotateX(calc(-7deg + (7deg * var(--seal-travel, 0))))
-    rotateY(calc(-16deg + (16deg * var(--seal-travel, 0))))
+    rotateX(calc(-7deg + (7deg * var(--seal-travel, 0)) + var(--seal-pointer-rx, 0deg)))
+    rotateY(calc(-16deg + (16deg * var(--seal-travel, 0)) + var(--seal-pointer-ry, 0deg)))
     rotateZ(calc(-5deg + (8deg * var(--seal-travel, 0))));
   opacity: calc(1 - (.96 * var(--seal-break, 0)));
   filter:
     drop-shadow(0 28px 58px rgba(0, 0, 0, .72))
     drop-shadow(0 0 44px rgba(151, 110, 58, calc(.08 + (.16 * var(--seal-travel, 0)))));
-  transition: opacity 80ms linear;
+  transition: opacity 80ms linear, transform 220ms cubic-bezier(.18,.72,.2,1);
 }
 
 .seal::before {
@@ -183,12 +187,13 @@
 
 .sceneLight {
   position: fixed;
-  inset: 0;
+  inset: -3%;
   z-index: 3;
   pointer-events: none;
   opacity: calc(1 - var(--gateway, 0));
   mix-blend-mode: screen;
-  transition: background 700ms cubic-bezier(.2,.65,.2,1), opacity 500ms ease;
+  transform: translate3d(var(--light-pointer-x, 0px), var(--light-pointer-y, 0px), 0) scale(1.035);
+  transition: background 700ms cubic-bezier(.2,.65,.2,1), opacity 500ms ease, transform 320ms cubic-bezier(.18,.72,.2,1);
 }
 
 :global(main[data-scene="0"]) .sceneLight {
@@ -229,12 +234,20 @@
     top: 48%;
     width: min(62vw, 390px);
     opacity: calc(.72 - (.72 * var(--seal-break, 0)));
+    transform:
+      translate3d(calc(-50% - (12vw * var(--seal-travel, 0))), -50%, 0)
+      scale(calc(.82 + (.72 * var(--seal-travel, 0))))
+      rotateX(calc(-7deg + (7deg * var(--seal-travel, 0))))
+      rotateY(calc(-16deg + (16deg * var(--seal-travel, 0))))
+      rotateZ(calc(-5deg + (8deg * var(--seal-travel, 0))));
   }
   .mark span,
   .mark small { display: none; }
-  .sceneLight { opacity: calc((1 - var(--gateway, 0)) * .72); }
+  .sceneLight { opacity: calc((1 - var(--gateway, 0)) * .72); transform: scale(1.02); }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .seal,
+  .sceneLight { transition: none; }
   .core::before { animation: none; }
 }
