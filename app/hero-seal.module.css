@@ -1,0 +1,240 @@
+.seal {
+  position: fixed;
+  z-index: 6;
+  left: 62%;
+  top: 49%;
+  width: min(42vw, 520px);
+  aspect-ratio: 1;
+  pointer-events: none;
+  transform-style: preserve-3d;
+  transform:
+    translate3d(calc(-50% - (12vw * var(--seal-travel, 0))), -50%, 0)
+    scale(calc(.82 + (.72 * var(--seal-travel, 0))))
+    rotateX(calc(-7deg + (7deg * var(--seal-travel, 0))))
+    rotateY(calc(-16deg + (16deg * var(--seal-travel, 0))))
+    rotateZ(calc(-5deg + (8deg * var(--seal-travel, 0))));
+  opacity: calc(1 - (.96 * var(--seal-break, 0)));
+  filter:
+    drop-shadow(0 28px 58px rgba(0, 0, 0, .72))
+    drop-shadow(0 0 44px rgba(151, 110, 58, calc(.08 + (.16 * var(--seal-travel, 0)))));
+  transition: opacity 80ms linear;
+}
+
+.seal::before {
+  content: "";
+  position: absolute;
+  inset: 5.5%;
+  border-radius: 50%;
+  background:
+    conic-gradient(
+      from 7deg,
+      rgba(129, 93, 50, .82) 0deg 3deg,
+      rgba(16, 16, 14, .98) 3deg 39deg,
+      rgba(184, 139, 75, .28) 39deg 41deg,
+      rgba(10, 10, 9, .98) 41deg 84deg,
+      rgba(159, 116, 61, .5) 84deg 87deg,
+      rgba(18, 17, 14, .98) 87deg 129deg,
+      rgba(111, 80, 44, .52) 129deg 132deg,
+      rgba(8, 8, 7, .99) 132deg 176deg,
+      rgba(205, 161, 94, .34) 176deg 179deg,
+      rgba(13, 13, 11, .99) 179deg 222deg,
+      rgba(133, 94, 48, .56) 222deg 225deg,
+      rgba(7, 8, 7, .99) 225deg 268deg,
+      rgba(190, 147, 83, .32) 268deg 271deg,
+      rgba(17, 16, 13, .99) 271deg 316deg,
+      rgba(122, 87, 45, .55) 316deg 319deg,
+      rgba(9, 9, 8, .99) 319deg 360deg
+    );
+  -webkit-mask: radial-gradient(circle, transparent 0 60%, #000 60.5% 100%);
+  mask: radial-gradient(circle, transparent 0 60%, #000 60.5% 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(216, 178, 112, .12),
+    inset 0 0 36px rgba(0, 0, 0, .78),
+    0 0 0 1px rgba(152, 113, 63, .11),
+    0 0 46px rgba(123, 83, 38, .08);
+  transform: rotate(calc(16deg + (58deg * var(--seal-travel, 0)))) scale(calc(1 + (.16 * var(--seal-break, 0))));
+}
+
+.seal::after {
+  content: "";
+  position: absolute;
+  inset: 19%;
+  border-radius: 50%;
+  border: 1px solid rgba(188, 148, 84, .24);
+  box-shadow:
+    0 0 0 10px rgba(18, 15, 11, .32),
+    0 0 0 11px rgba(217, 177, 108, .055),
+    inset 0 0 45px rgba(0,0,0,.82),
+    0 0 30px rgba(165, 116, 57, .08);
+  opacity: calc(1 - (.75 * var(--seal-break, 0)));
+  transform: rotate(calc(-9deg - (26deg * var(--seal-travel, 0))));
+}
+
+.core {
+  position: absolute;
+  inset: 27%;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    linear-gradient(115deg, transparent 0 43%, rgba(205, 166, 101, .065) 44%, transparent 46%),
+    radial-gradient(circle at 67% 29%, rgba(170, 129, 72, .17), transparent 20%),
+    radial-gradient(circle at 46% 45%, #222018 0, #100f0c 49%, #070807 77%, #020303 100%);
+  border: 1px solid rgba(201, 164, 101, .18);
+  box-shadow:
+    inset 0 0 52px rgba(0,0,0,.76),
+    inset -18px -26px 38px rgba(0,0,0,.66),
+    inset 16px 14px 28px rgba(137, 98, 48, .06),
+    0 0 42px rgba(0,0,0,.72);
+  transform: translateZ(22px) scale(calc(1 - (.24 * var(--seal-break, 0))));
+  opacity: calc(1 - var(--seal-break, 0));
+}
+
+.core::before {
+  content: "";
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  background:
+    repeating-conic-gradient(from 0deg, rgba(211,174,111,.09) 0deg 1deg, transparent 1deg 22.5deg),
+    radial-gradient(circle, transparent 62%, rgba(184,139,76,.08) 63% 64%, transparent 65%);
+  animation: sealIndex 16s linear infinite;
+}
+
+.core::after {
+  content: "";
+  position: absolute;
+  left: 11%;
+  right: 11%;
+  top: 50%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(231,199,137,.1), rgba(231,199,137,.62), rgba(231,199,137,.1), transparent);
+  box-shadow: 0 0 13px rgba(193,145,78,.18);
+  transform: translateY(calc((-48px + (96px * var(--seal-travel, 0)))));
+  opacity: calc(.24 + (.5 * var(--seal-travel, 0)));
+}
+
+.mark {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  transform: translateZ(32px);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.mark b {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: rgba(226, 211, 181, .92);
+  font-size: clamp(34px, 5vw, 68px);
+  line-height: .92;
+  letter-spacing: -.08em;
+  font-weight: 500;
+  text-shadow: 0 0 22px rgba(181, 132, 66, .12);
+}
+
+.mark span {
+  color: rgba(184, 145, 86, .64);
+  font: 500 7px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .28em;
+}
+
+.mark small {
+  color: rgba(255,255,255,.23);
+  font: 500 6px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .22em;
+}
+
+.spokes {
+  position: absolute;
+  inset: 0;
+  transform: rotate(calc(8deg + (34deg * var(--seal-travel, 0))));
+}
+
+.spokes i {
+  --angle: 0deg;
+  position: absolute;
+  left: calc(50% - .5px);
+  top: 4%;
+  width: 1px;
+  height: 18%;
+  transform-origin: 50% 255%;
+  transform:
+    rotate(var(--angle))
+    translateY(calc(-22px * var(--seal-break, 0)))
+    scaleY(calc(1 + (.55 * var(--seal-break, 0))));
+  background: linear-gradient(180deg, rgba(219,181,112,.03), rgba(205,160,92,.55), rgba(205,160,92,.06));
+  box-shadow: 0 0 10px rgba(172,119,57,.09);
+  opacity: calc(.58 - (.5 * var(--seal-break, 0)));
+}
+
+.spokes i:nth-child(1) { --angle: 0deg; }
+.spokes i:nth-child(2) { --angle: 45deg; }
+.spokes i:nth-child(3) { --angle: 90deg; }
+.spokes i:nth-child(4) { --angle: 135deg; }
+.spokes i:nth-child(5) { --angle: 180deg; }
+.spokes i:nth-child(6) { --angle: 225deg; }
+.spokes i:nth-child(7) { --angle: 270deg; }
+.spokes i:nth-child(8) { --angle: 315deg; }
+
+.sceneLight {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: calc(1 - var(--gateway, 0));
+  mix-blend-mode: screen;
+  transition: background 700ms cubic-bezier(.2,.65,.2,1), opacity 500ms ease;
+}
+
+:global(main[data-scene="0"]) .sceneLight {
+  background:
+    radial-gradient(ellipse at 78% 44%, rgba(189,202,196,.12) 0 4%, rgba(119,134,129,.05) 18%, transparent 44%),
+    linear-gradient(102deg, transparent 0 58%, rgba(190,151,91,.028) 72%, transparent 88%);
+}
+
+:global(main[data-scene="1"]) .sceneLight {
+  background:
+    radial-gradient(circle at 50% 49%, rgba(224,234,230,.18) 0 5%, rgba(155,178,170,.08) 15%, transparent 39%),
+    radial-gradient(ellipse at 18% 42%, rgba(192,207,201,.06), transparent 27%);
+}
+
+:global(main[data-scene="2"]) .sceneLight {
+  background:
+    radial-gradient(ellipse at 58% 49%, rgba(185,136,67,.16) 0 4%, rgba(117,82,40,.085) 16%, transparent 42%),
+    radial-gradient(ellipse at 42% 68%, rgba(115,79,39,.05), transparent 31%);
+}
+
+:global(main[data-scene="3"]) .sceneLight {
+  background:
+    radial-gradient(ellipse at 68% 35%, rgba(190,145,77,.105) 0 3%, transparent 20%),
+    radial-gradient(ellipse at 35% 48%, rgba(223,190,127,.075) 0 3%, transparent 18%),
+    radial-gradient(ellipse at 66% 70%, rgba(172,124,65,.08) 0 2%, transparent 17%),
+    radial-gradient(ellipse at 29% 75%, rgba(203,161,92,.06) 0 2%, transparent 16%);
+}
+
+:global(main[data-scene="4"]) .sceneLight { opacity: 0; }
+
+@keyframes sealIndex {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 760px) {
+  .seal {
+    left: 66%;
+    top: 48%;
+    width: min(62vw, 390px);
+    opacity: calc(.72 - (.72 * var(--seal-break, 0)));
+  }
+  .mark span,
+  .mark small { display: none; }
+  .sceneLight { opacity: calc((1 - var(--gateway, 0)) * .72); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .core::before { animation: none; }
+}
