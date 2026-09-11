@@ -6,6 +6,7 @@ import styles from "./page.module.css";
 import cinematic from "./cinematic.module.css";
 import archiveFx from "./archive-transitions.module.css";
 import archiveMaterial from "./archive-material.module.css";
+import archiveDetail from "./archive-detail.module.css";
 import artifactFocus from "./artifact-focus.module.css";
 import archiveDecode from "./archive-decode.module.css";
 import heroSeal from "./hero-seal.module.css";
@@ -118,6 +119,26 @@ export default function LavineArchive() {
       lastScrollAt = performance.now();
     };
 
+    const readPointer = (event: PointerEvent) => {
+      if (reducedMotion) return;
+      const width = Math.max(1, window.innerWidth);
+      const height = Math.max(1, window.innerHeight);
+      const nx = clamp(event.clientX / width - 0.5, -0.5, 0.5) * 2;
+      const ny = clamp(event.clientY / height - 0.5, -0.5, 0.5) * 2;
+      stage.style.setProperty("--pointer-x-px", `${event.clientX}px`);
+      stage.style.setProperty("--pointer-y-px", `${event.clientY}px`);
+      stage.style.setProperty("--bg-parallax-x", `${(-nx * 7).toFixed(2)}px`);
+      stage.style.setProperty("--bg-parallax-y", `${(-ny * 4).toFixed(2)}px`);
+      stage.style.setProperty("--etch-parallax-x", `${(-nx * 12).toFixed(2)}px`);
+      stage.style.setProperty("--etch-parallax-y", `${(-ny * 7).toFixed(2)}px`);
+      stage.style.setProperty("--seal-pointer-x", `${(nx * 8).toFixed(2)}px`);
+      stage.style.setProperty("--seal-pointer-y", `${(ny * 5).toFixed(2)}px`);
+      stage.style.setProperty("--seal-pointer-rx", `${(-ny * 2.1).toFixed(2)}deg`);
+      stage.style.setProperty("--seal-pointer-ry", `${(nx * 2.8).toFixed(2)}deg`);
+      stage.style.setProperty("--light-pointer-x", `${(nx * 20).toFixed(2)}px`);
+      stage.style.setProperty("--light-pointer-y", `${(ny * 12).toFixed(2)}px`);
+    };
+
     const paint = (now: number) => {
       const dt = Math.min((now - last) / 1000, 0.05);
       last = now;
@@ -193,11 +214,13 @@ export default function LavineArchive() {
 
     readScroll();
     window.addEventListener("scroll", readScroll, { passive: true });
+    window.addEventListener("pointermove", readPointer, { passive: true });
     raf = requestAnimationFrame(paint);
 
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("scroll", readScroll);
+      window.removeEventListener("pointermove", readPointer);
     };
   }, []);
 
@@ -220,6 +243,13 @@ export default function LavineArchive() {
         <div className={`${archiveFx.vaultPerspective} ${archiveMaterial.perspectiveRefined}`} />
         <div className={`${archiveFx.goldAtmosphere} ${archiveMaterial.atmosphereRefined}`} />
         <div className={`${archiveFx.depthSlabs} ${archiveMaterial.slabsRefined}`} />
+        <div className={archiveDetail.field}>
+          <div className={archiveDetail.pointerAura} />
+          <div className={archiveDetail.etching} />
+          <div className={archiveDetail.rings} />
+          <div className={archiveDetail.ribs}><i /><i /><i /><i /><i /><i /></div>
+          <div className={archiveDetail.ledger} />
+        </div>
       </div>
 
       <div className={heroSeal.sceneLight} aria-hidden="true" />
@@ -352,6 +382,19 @@ export default function LavineArchive() {
           onPointerMove={(event) => {
             stageRef.current?.style.setProperty("--focus-x", `${event.clientX}px`);
             stageRef.current?.style.setProperty("--focus-y", `${event.clientY}px`);
+            const rect = event.currentTarget.getBoundingClientRect();
+            const x = clamp((event.clientX - rect.left) / Math.max(1, rect.width), 0, 1);
+            const y = clamp((event.clientY - rect.top) / Math.max(1, rect.height), 0, 1);
+            event.currentTarget.style.setProperty("--artifact-glow-x", `${(x * 100).toFixed(2)}%`);
+            event.currentTarget.style.setProperty("--artifact-glow-y", `${(y * 100).toFixed(2)}%`);
+            event.currentTarget.style.setProperty("--artifact-rx", `${((0.5 - y) * 1.5).toFixed(2)}deg`);
+            event.currentTarget.style.setProperty("--artifact-ry", `${((x - 0.5) * 2.4).toFixed(2)}deg`);
+          }}
+          onPointerLeave={(event) => {
+            event.currentTarget.style.setProperty("--artifact-glow-x", "50%");
+            event.currentTarget.style.setProperty("--artifact-glow-y", "50%");
+            event.currentTarget.style.setProperty("--artifact-rx", "0deg");
+            event.currentTarget.style.setProperty("--artifact-ry", "0deg");
           }}
         >
           <div className={exhibition.stack}>
