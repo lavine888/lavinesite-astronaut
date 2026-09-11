@@ -9,6 +9,8 @@ import archiveMaterial from "./archive-material.module.css";
 import artifactFocus from "./artifact-focus.module.css";
 import archiveDecode from "./archive-decode.module.css";
 import heroSeal from "./hero-seal.module.css";
+import exhibition from "./exhibition.module.css";
+import handoff from "./handoff.module.css";
 
 const MAIN_PROFILE = "https://lavine-site.vercel.app/profile";
 const SCENE_LABELS = ["ORIGIN", "THRESHOLD", "LOGIC", "ARTIFACTS", "GATEWAY"];
@@ -67,8 +69,35 @@ export default function LavineArchive() {
   const progressRef = useRef<HTMLDivElement>(null);
   const chapterRefs = useRef<Array<HTMLElement | null>>([]);
   const activeSceneRef = useRef(0);
+  const activeArtifactRef = useRef(0);
   const [activeScene, setActiveScene] = useState(0);
+  const [activeArtifact, setActiveArtifact] = useState(0);
   const [focusedArtifact, setFocusedArtifact] = useState<number | null>(null);
+  const [showBoot, setShowBoot] = useState(true);
+  const [gatewayExit, setGatewayExit] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (window.sessionStorage.getItem("lavine-archive-boot-seen")) {
+        setShowBoot(false);
+      } else {
+        window.sessionStorage.setItem("lavine-archive-boot-seen", "1");
+      }
+    } catch {
+      // Keep the full boot when session storage is unavailable.
+    }
+
+    const prefetch = document.createElement("link");
+    prefetch.rel = "prefetch";
+    prefetch.href = MAIN_PROFILE;
+    document.head.appendChild(prefetch);
+    return () => prefetch.remove();
+  }, []);
+
+  useEffect(() => {
+    const index = activeScene === 3 ? (focusedArtifact ?? activeArtifact) : (focusedArtifact ?? -1);
+    window.dispatchEvent(new CustomEvent("artifact-focus", { detail: index }));
+  }, [activeArtifact, activeScene, focusedArtifact]);
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -76,7 +105,7 @@ export default function LavineArchive() {
     if (!stage || !progressBar) return;
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const settleAnchors = [0.235, 0.447, 0.665, 0.91];
+    const settleAnchors = [0.235, 0.447, 0.61, 0.665, 0.72, 0.91];
     let target = 0;
     let current = 0;
     let raf = 0;
@@ -105,9 +134,9 @@ export default function LavineArchive() {
             nearestDistance = distance;
           }
         });
-        if (nearestDistance < 0.042) {
-          const pull = 1 - nearestDistance / 0.042;
-          const strength = pull * pull * 0.88;
+        if (nearestDistance < 0.038) {
+          const pull = 1 - nearestDistance / 0.038;
+          const strength = pull * pull * 0.82;
           visualTarget = target + (nearest - target) * strength;
         }
       }
@@ -140,6 +169,15 @@ export default function LavineArchive() {
         setActiveScene(nextScene);
       }
 
+      if (current > 0.555 && current < 0.815) {
+        const exhibit = clamp((current - 0.565) / 0.205, 0, 0.999);
+        const nextArtifact = clamp(Math.floor(exhibit * artifacts.length), 0, artifacts.length - 1);
+        if (nextArtifact !== activeArtifactRef.current) {
+          activeArtifactRef.current = nextArtifact;
+          setActiveArtifact(nextArtifact);
+        }
+      }
+
       chapterRefs.current.forEach((node, index) => {
         if (!node) return;
         const opacity = sceneOpacity(position, index, index === 0 ? 0.62 : 0.54);
@@ -164,9 +202,14 @@ export default function LavineArchive() {
   }, []);
 
   const sceneMeta = SCENE_META[activeScene];
-  const focusArtifact = (index: number | null) => {
-    setFocusedArtifact(index);
-    window.dispatchEvent(new CustomEvent("artifact-focus", { detail: index ?? -1 }));
+  const focusArtifact = (index: number | null) => setFocusedArtifact(index);
+  const handleGatewayEnter = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    if (gatewayExit) return;
+    setGatewayExit(true);
+    window.setTimeout(() => {
+      window.location.href = MAIN_PROFILE;
+    }, 650);
   };
 
   return (
@@ -191,14 +234,16 @@ export default function LavineArchive() {
         </div>
       </div>
 
-      <div className={archiveFx.bootSequence} aria-hidden="true">
-        <div className={archiveFx.bootCore}>
-          <span>PERSONAL SYSTEM / LX-888</span>
-          <b>LAVINE / ARCHIVE</b>
-          <small>INDEXING SELECTED OBJECTS · SIGNAL VERIFIED</small>
-          <div className={archiveFx.bootStatus}><i /></div>
+      {showBoot && (
+        <div className={archiveFx.bootSequence} aria-hidden="true">
+          <div className={archiveFx.bootCore}>
+            <span>PERSONAL SYSTEM / LX-888</span>
+            <b>LAVINE / ARCHIVE</b>
+            <small>INDEXING SELECTED OBJECTS · SIGNAL VERIFIED</small>
+            <div className={archiveFx.bootStatus}><i /></div>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className={archiveFx.transitionVeil} aria-hidden="true">
         <div className={archiveFx.alloyGrade} />
@@ -218,9 +263,7 @@ export default function LavineArchive() {
         <div className={cinematic.edgeGlow} />
       </div>
 
-      <div className={cinematic.frameCorners} aria-hidden="true">
-        <i /><i /><i /><i />
-      </div>
+      <div className={cinematic.frameCorners} aria-hidden="true"><i /><i /><i /><i /></div>
 
       <div className={cinematic.sceneGhost} aria-hidden="true">
         <span>0{activeScene + 1}</span>
@@ -259,11 +302,7 @@ export default function LavineArchive() {
         <span className={styles.sceneLabel}>{SCENE_LABELS[activeScene]}</span>
       </aside>
 
-      <section
-        id="top"
-        ref={(node) => { chapterRefs.current[0] = node; }}
-        className={`${styles.chapter} ${styles.hero}`}
-      >
+      <section id="top" ref={(node) => { chapterRefs.current[0] = node; }} className={`${styles.chapter} ${styles.hero}`}>
         <div className={styles.heroTopline}>
           <span>PERSONAL ARCHIVE / ACCESS CHANNEL</span>
           <span>EST. 2026</span>
@@ -278,26 +317,18 @@ export default function LavineArchive() {
         </div>
       </section>
 
-      <section
-        ref={(node) => { chapterRefs.current[1] = node; }}
-        className={`${styles.chapter} ${styles.threshold}`}
-      >
+      <section ref={(node) => { chapterRefs.current[1] = node; }} className={`${styles.chapter} ${styles.threshold}`}>
         <p className={styles.eyebrow}>ARCHIVE 00 / THRESHOLD</p>
         <h2>ENTER<br />THE HATCH</h2>
         <div className={styles.copyRow}>
           <p>The door only opens one way: forward. Beyond it sits a record of products, systems and experiments that survived contact with reality.</p>
           <div className={styles.accessCard}>
-            <span>ACCESS</span>
-            <b>GRANTED</b>
-            <small>CHANNEL / LX-888</small>
+            <span>ACCESS</span><b>GRANTED</b><small>CHANNEL / LX-888</small>
           </div>
         </div>
       </section>
 
-      <section
-        ref={(node) => { chapterRefs.current[2] = node; }}
-        className={`${styles.chapter} ${styles.identity}`}
-      >
+      <section ref={(node) => { chapterRefs.current[2] = node; }} className={`${styles.chapter} ${styles.identity}`}>
         <p className={`${styles.eyebrow} ${archiveDecode.decode} ${archiveDecode.logicDecode}`} data-decode="ARCHIVE 01 / OPERATING LOGIC">ARCHIVE 01 / OPERATING LOGIC</p>
         <div className={styles.identityGrid}>
           <div><span>01</span><b>BUILD</b><small>Turn vague ambition into a working product.</small></div>
@@ -307,43 +338,51 @@ export default function LavineArchive() {
         <p className={styles.identityStatement}>Small credible systems.<br />Fast feedback. Real artifacts.</p>
       </section>
 
-      <section
-        ref={(node) => { chapterRefs.current[3] = node; }}
-        className={`${styles.chapter} ${styles.artifacts}`}
-      >
+      <section ref={(node) => { chapterRefs.current[3] = node; }} className={`${styles.chapter} ${styles.artifacts}`}>
         <div className={styles.artifactHeader}>
           <div>
             <p className={styles.eyebrow}>ARCHIVE 02 / SELECTED OBJECTS</p>
             <h2 className={`${archiveDecode.decode} ${archiveDecode.artifactDecode}`} data-decode="ARTIFACTS">ARTIFACTS</h2>
           </div>
-          <p>Four objects from the archive. Each one points back to something that was actually built, tested or shipped.</p>
+          <p>Four objects from the archive. Scroll through the field; each object gets one frame to speak for itself.</p>
         </div>
+
         <div
-          className={styles.artifactGrid}
+          className={exhibition.exhibition}
           onPointerMove={(event) => {
             stageRef.current?.style.setProperty("--focus-x", `${event.clientX}px`);
             stageRef.current?.style.setProperty("--focus-y", `${event.clientY}px`);
           }}
         >
-          {artifacts.map((artifact, index) => (
-            <a
-              key={artifact.index}
-              className={`${styles.artifact} ${focusedArtifact === index ? artifactFocus.focusedCard : ""}`}
-              href={artifact.href}
-              target="_blank"
-              rel="noreferrer"
-              onMouseEnter={() => focusArtifact(index)}
-              onMouseLeave={() => focusArtifact(null)}
-              onFocus={() => focusArtifact(index)}
-              onBlur={() => focusArtifact(null)}
-            >
-              <span className={styles.artifactIndex}>A-{artifact.index}</span>
-              <b>{artifact.name}</b>
-              <small>{artifact.tag}</small>
-              <em>{artifact.outcome}</em>
-              <i>↗</i>
-            </a>
-          ))}
+          <div className={exhibition.stack}>
+            {artifacts.map((artifact, index) => (
+              <a
+                key={artifact.index}
+                className={`${exhibition.item} ${activeArtifact === index ? exhibition.active : ""}`}
+                href={artifact.href}
+                target="_blank"
+                rel="noreferrer"
+                aria-hidden={activeArtifact !== index}
+                tabIndex={activeArtifact === index ? 0 : -1}
+                onMouseEnter={() => focusArtifact(index)}
+                onMouseLeave={() => focusArtifact(null)}
+                onFocus={() => focusArtifact(index)}
+                onBlur={() => focusArtifact(null)}
+              >
+                <span className={exhibition.index}>A-{artifact.index}</span>
+                <b className={exhibition.name}>{artifact.name}</b>
+                <small className={exhibition.tag}>{artifact.tag}</small>
+                <em className={exhibition.outcome}>{artifact.outcome}</em>
+                <i className={exhibition.arrow}>↗</i>
+              </a>
+            ))}
+          </div>
+          <div className={exhibition.rail} aria-hidden="true">
+            {artifacts.map((artifact, index) => (
+              <i key={artifact.index} className={activeArtifact === index ? exhibition.current : ""} />
+            ))}
+          </div>
+          <span className={exhibition.counter} aria-hidden="true">0{activeArtifact + 1} / 04</span>
         </div>
       </section>
 
@@ -354,18 +393,17 @@ export default function LavineArchive() {
         <small>{focusedArtifact === null ? "FOCUS CHANNEL" : `${artifacts[focusedArtifact].tag} / FOCUS`}</small>
       </div>
 
-      <section
-        ref={(node) => { chapterRefs.current[4] = node; }}
-        className={`${styles.chapter} ${styles.final}`}
-      >
+      <section ref={(node) => { chapterRefs.current[4] = node; }} className={`${styles.chapter} ${styles.final}`}>
         <p className={styles.eyebrow}>ARCHIVE 03 / GATEWAY</p>
         <h2>THE ARCHIVE<br />IS OPEN</h2>
         <p className={styles.finalCopy}>The cinematic layer ends here. The actual work, context and details continue on the other side.</p>
         <div className={styles.finalActions}>
-          <a href={MAIN_PROFILE} className={styles.enter}>Enter profile <span>↗</span></a>
+          <a href={MAIN_PROFILE} onClick={handleGatewayEnter} className={styles.enter}>Enter profile <span>↗</span></a>
           <a href="https://github.com/lavine888" target="_blank" rel="noreferrer" className={styles.secondary}>GitHub / source</a>
         </div>
       </section>
+
+      <div className={`${handoff.handoff} ${gatewayExit ? handoff.active : ""}`} aria-hidden="true" />
 
       <div className={styles.progressTrack} aria-hidden="true">
         <div ref={progressRef} className={styles.progress} />
