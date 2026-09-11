@@ -7,6 +7,7 @@ import cinematic from "./cinematic.module.css";
 import archiveFx from "./archive-transitions.module.css";
 import archiveMaterial from "./archive-material.module.css";
 import artifactFocus from "./artifact-focus.module.css";
+import archiveDecode from "./archive-decode.module.css";
 
 const MAIN_PROFILE = "https://lavine-site.vercel.app/profile";
 const SCENE_LABELS = ["ORIGIN", "THRESHOLD", "LOGIC", "ARTIFACTS", "GATEWAY"];
@@ -89,7 +90,7 @@ export default function LavineArchive() {
       const smoothing = reducedMotion ? 1 : 1 - Math.pow(0.0008, dt);
       let visualTarget = target;
 
-      if (!reducedMotion && now - lastScrollAt > 135) {
+      if (!reducedMotion && now - lastScrollAt > 130) {
         let nearest = settleAnchors[0];
         let nearestDistance = Math.abs(target - nearest);
         settleAnchors.forEach((anchor) => {
@@ -99,8 +100,10 @@ export default function LavineArchive() {
             nearestDistance = distance;
           }
         });
-        if (nearestDistance < 0.026) {
-          visualTarget = target + (nearest - target) * Math.min(1, dt * 5.2);
+        if (nearestDistance < 0.042) {
+          const pull = 1 - nearestDistance / 0.042;
+          const strength = pull * pull * 0.88;
+          visualTarget = target + (nearest - target) * strength;
         }
       }
 
@@ -252,8 +255,8 @@ export default function LavineArchive() {
           <span>EST. 2026</span>
         </div>
         <h1>
-          <span data-text="LAVINE">LAVINE</span>
-          <span data-text="ARCHIVE">ARCHIVE</span>
+          <span className={`${archiveDecode.decode} ${archiveDecode.heroDecode}`} data-text="LAVINE" data-decode="LAVINE">LAVINE</span>
+          <span className={`${archiveDecode.decode} ${archiveDecode.heroDecodeSecondary}`} data-text="ARCHIVE" data-decode="ARCHIVE">ARCHIVE</span>
         </h1>
         <div className={styles.heroFooter}>
           <p>AI PRODUCT BUILDER / QUANTITATIVE SYSTEMS</p>
@@ -281,7 +284,7 @@ export default function LavineArchive() {
         ref={(node) => { chapterRefs.current[2] = node; }}
         className={`${styles.chapter} ${styles.identity}`}
       >
-        <p className={styles.eyebrow}>ARCHIVE 01 / OPERATING LOGIC</p>
+        <p className={`${styles.eyebrow} ${archiveDecode.decode} ${archiveDecode.logicDecode}`} data-decode="ARCHIVE 01 / OPERATING LOGIC">ARCHIVE 01 / OPERATING LOGIC</p>
         <div className={styles.identityGrid}>
           <div><span>01</span><b>BUILD</b><small>Turn vague ambition into a working product.</small></div>
           <div><span>02</span><b>MEASURE</b><small>Replace demo confidence with evidence.</small></div>
@@ -297,7 +300,7 @@ export default function LavineArchive() {
         <div className={styles.artifactHeader}>
           <div>
             <p className={styles.eyebrow}>ARCHIVE 02 / SELECTED OBJECTS</p>
-            <h2>ARTIFACTS</h2>
+            <h2 className={`${archiveDecode.decode} ${archiveDecode.artifactDecode}`} data-decode="ARTIFACTS">ARTIFACTS</h2>
           </div>
           <p>Four objects from the archive. Each one points back to something that was actually built, tested or shipped.</p>
         </div>
@@ -311,7 +314,7 @@ export default function LavineArchive() {
           {artifacts.map((artifact, index) => (
             <a
               key={artifact.index}
-              className={styles.artifact}
+              className={`${styles.artifact} ${focusedArtifact === index ? artifactFocus.focusedCard : ""}`}
               href={artifact.href}
               target="_blank"
               rel="noreferrer"
