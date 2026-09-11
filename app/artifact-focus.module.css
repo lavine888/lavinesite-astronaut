@@ -1,0 +1,76 @@
+.focusHud {
+  position: fixed;
+  z-index: 76;
+  left: var(--focus-x, 64vw);
+  top: var(--focus-y, 58vh);
+  width: 174px;
+  padding: 12px 14px 11px;
+  border-left: 1px solid rgba(184, 143, 80, .62);
+  background: linear-gradient(90deg, rgba(8, 7, 5, .78), rgba(8, 7, 5, .18));
+  backdrop-filter: blur(7px);
+  transform: translate(18px, 18px);
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 160ms ease, transform 220ms cubic-bezier(.2,.7,.2,1);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-transform: uppercase;
+}
+
+.focusHud::before,
+.focusHud::after {
+  content: "";
+  position: absolute;
+  left: -7px;
+  width: 13px;
+  height: 1px;
+  background: rgba(211, 178, 121, .7);
+  box-shadow: 0 0 12px rgba(160, 113, 53, .24);
+}
+
+.focusHud::before { top: 0; }
+.focusHud::after { bottom: 0; }
+
+.focusHud span {
+  display: block;
+  color: rgba(191, 153, 91, .68);
+  font-size: 7px;
+  letter-spacing: .22em;
+}
+
+.focusHud b {
+  display: block;
+  margin-top: 5px;
+  color: rgba(240, 233, 217, .9);
+  font-size: 10px;
+  line-height: 1.25;
+  letter-spacing: .12em;
+  font-weight: 500;
+}
+
+.focusHud small {
+  display: block;
+  margin-top: 4px;
+  color: rgba(255,255,255,.34);
+  font-size: 7px;
+  letter-spacing: .16em;
+}
+
+.focusHud i {
+  position: absolute;
+  left: -3px;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border: 1px solid rgba(211, 178, 121, .78);
+  transform: translate(-50%, -50%) rotate(45deg);
+  box-shadow: 0 0 12px rgba(180, 134, 68, .28);
+}
+
+.hidden {
+  opacity: 0;
+  transform: translate(12px, 12px) scale(.97);
+}
+
+@media (pointer: coarse), (max-width: 760px) {
+  .focusHud { display: none; }
+}
