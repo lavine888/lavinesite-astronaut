@@ -6,6 +6,7 @@ import styles from "./page.module.css";
 import cinematic from "./cinematic.module.css";
 import archiveFx from "./archive-transitions.module.css";
 import archiveMaterial from "./archive-material.module.css";
+import artifactFocus from "./artifact-focus.module.css";
 
 const MAIN_PROFILE = "https://lavine-site.vercel.app/profile";
 const SCENE_LABELS = ["ORIGIN", "THRESHOLD", "LOGIC", "ARTIFACTS", "GATEWAY"];
@@ -61,6 +62,7 @@ export default function LavineArchive() {
   const chapterRefs = useRef<Array<HTMLElement | null>>([]);
   const activeSceneRef = useRef(0);
   const [activeScene, setActiveScene] = useState(0);
+  const [focusedArtifact, setFocusedArtifact] = useState<number | null>(null);
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -68,21 +70,41 @@ export default function LavineArchive() {
     if (!stage || !progressBar) return;
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const settleAnchors = [0.235, 0.447, 0.665, 0.91];
     let target = 0;
     let current = 0;
     let raf = 0;
     let last = performance.now();
+    let lastScrollAt = performance.now();
 
     const readScroll = () => {
       const travel = document.documentElement.scrollHeight - window.innerHeight;
       target = travel > 0 ? clamp(window.scrollY / travel, 0, 1) : 0;
+      lastScrollAt = performance.now();
     };
 
     const paint = (now: number) => {
       const dt = Math.min((now - last) / 1000, 0.05);
       last = now;
       const smoothing = reducedMotion ? 1 : 1 - Math.pow(0.0008, dt);
-      current += (target - current) * smoothing;
+      let visualTarget = target;
+
+      if (!reducedMotion && now - lastScrollAt > 135) {
+        let nearest = settleAnchors[0];
+        let nearestDistance = Math.abs(target - nearest);
+        settleAnchors.forEach((anchor) => {
+          const distance = Math.abs(target - anchor);
+          if (distance < nearestDistance) {
+            nearest = anchor;
+            nearestDistance = distance;
+          }
+        });
+        if (nearestDistance < 0.026) {
+          visualTarget = target + (nearest - target) * Math.min(1, dt * 5.2);
+        }
+      }
+
+      current += (visualTarget - current) * smoothing;
 
       progressBar.style.transform = `scaleX(${current})`;
       const hatchImpact = pulse(current, 0.235, 0.075);
@@ -130,6 +152,10 @@ export default function LavineArchive() {
   }, []);
 
   const sceneMeta = SCENE_META[activeScene];
+  const focusArtifact = (index: number | null) => {
+    setFocusedArtifact(index);
+    window.dispatchEvent(new CustomEvent("artifact-focus", { detail: index ?? -1 }));
+  };
 
   return (
     <main ref={stageRef} data-scene={activeScene} className={`${styles.stage} ${cinematic.stageBoost}`}>
@@ -275,9 +301,25 @@ export default function LavineArchive() {
           </div>
           <p>Four objects from the archive. Each one points back to something that was actually built, tested or shipped.</p>
         </div>
-        <div className={styles.artifactGrid}>
-          {artifacts.map((artifact) => (
-            <a key={artifact.index} className={styles.artifact} href={artifact.href} target="_blank" rel="noreferrer">
+        <div
+          className={styles.artifactGrid}
+          onPointerMove={(event) => {
+            stageRef.current?.style.setProperty("--focus-x", `${event.clientX}px`);
+            stageRef.current?.style.setProperty("--focus-y", `${event.clientY}px`);
+          }}
+        >
+          {artifacts.map((artifact, index) => (
+            <a
+              key={artifact.index}
+              className={styles.artifact}
+              href={artifact.href}
+              target="_blank"
+              rel="noreferrer"
+              onMouseEnter={() => focusArtifact(index)}
+              onMouseLeave={() => focusArtifact(null)}
+              onFocus={() => focusArtifact(index)}
+              onBlur={() => focusArtifact(null)}
+            >
               <span className={styles.artifactIndex}>A-{artifact.index}</span>
               <b>{artifact.name}</b>
               <small>{artifact.tag}</small>
@@ -287,6 +329,13 @@ export default function LavineArchive() {
           ))}
         </div>
       </section>
+
+      <div className={`${artifactFocus.focusHud} ${focusedArtifact === null ? artifactFocus.hidden : ""}`} aria-hidden="true">
+        <i />
+        <span>{focusedArtifact === null ? "A-00" : `A-${artifacts[focusedArtifact].index}`}</span>
+        <b>{focusedArtifact === null ? "ARCHIVE OBJECT" : artifacts[focusedArtifact].name}</b>
+        <small>{focusedArtifact === null ? "FOCUS CHANNEL" : `${artifacts[focusedArtifact].tag} / FOCUS`}</small>
+      </div>
 
       <section
         ref={(node) => { chapterRefs.current[4] = node; }}
