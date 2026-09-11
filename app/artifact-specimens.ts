@@ -198,11 +198,15 @@ export function createArtifactSpecimens(world: THREE.Group) {
     mouseX: number,
     mouseY: number,
     focusedIndex: number,
-    storyProgress: number,
+    storyProgress?: number,
   ) => {
-    const morph = smoothstep(0.535, 0.705, storyProgress);
+    const morph = storyProgress === undefined
+      ? smoothstep(18.5, 31.5, -cameraZ)
+      : smoothstep(0.535, 0.705, storyProgress);
     const handoffPulse = Math.sin(morph * Math.PI);
-    const visible = storyProgress > 0.5 && storyProgress < 0.865;
+    const visible = storyProgress === undefined
+      ? -cameraZ > 17 && -cameraZ < 45.5
+      : storyProgress > 0.5 && storyProgress < 0.865;
 
     artifactObjects.forEach((obj, index) => {
       obj.visible = visible;
@@ -219,7 +223,6 @@ export function createArtifactSpecimens(world: THREE.Group) {
       const distance = Math.abs(cameraZ - artifactZ[index]);
       const cameraFocus = Math.max(0, 1 - distance / 8.4);
       const hoverFocus = focusedIndex === index ? 1 : 0;
-      const focus = Math.max(cameraFocus, hoverFocus * 0.9);
 
       obj.rotation.x =
         index * 0.12 +
