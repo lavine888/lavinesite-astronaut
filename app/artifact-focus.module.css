@@ -3,74 +3,141 @@
   z-index: 76;
   left: var(--focus-x, 64vw);
   top: var(--focus-y, 58vh);
-  width: 174px;
-  padding: 12px 14px 11px;
-  border-left: 1px solid rgba(184, 143, 80, .62);
-  background: linear-gradient(90deg, rgba(8, 7, 5, .78), rgba(8, 7, 5, .18));
-  backdrop-filter: blur(7px);
-  transform: translate(18px, 18px);
+  width: 188px;
+  padding: 14px 16px 13px;
+  border-top: 1px solid rgba(184, 143, 80, .2);
+  border-left: 1px solid rgba(184, 143, 80, .56);
+  background:
+    linear-gradient(90deg, rgba(9, 8, 6, .84), rgba(9, 8, 6, .34) 72%, transparent),
+    linear-gradient(180deg, rgba(138, 101, 52, .045), transparent 42%);
+  backdrop-filter: blur(8px);
+  transform: translate(22px, 20px);
   pointer-events: none;
   opacity: 1;
-  transition: opacity 160ms ease, transform 220ms cubic-bezier(.2,.7,.2,1);
+  overflow: visible;
+  transition: opacity 150ms ease, transform 220ms cubic-bezier(.2,.7,.2,1);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   text-transform: uppercase;
 }
 
-.focusHud::before,
+.focusHud::before {
+  content: "";
+  position: absolute;
+  right: 100%;
+  top: 17px;
+  width: 54px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(146, 105, 55, .26) 32%, rgba(221, 184, 119, .78));
+  box-shadow: 0 0 12px rgba(160, 113, 53, .18);
+  transform-origin: right center;
+  animation: focusLead .34s cubic-bezier(.2,.7,.2,1) both;
+}
+
 .focusHud::after {
   content: "";
   position: absolute;
-  left: -7px;
-  width: 13px;
-  height: 1px;
-  background: rgba(211, 178, 121, .7);
-  box-shadow: 0 0 12px rgba(160, 113, 53, .24);
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent 0 42%, rgba(209, 170, 106, .08) 49%, rgba(236, 209, 162, .18) 50%, rgba(209, 170, 106, .06) 51%, transparent 58%);
+  transform: translateX(-100%);
+  animation: focusScan .72s cubic-bezier(.24,.72,.2,1) both;
 }
-
-.focusHud::before { top: 0; }
-.focusHud::after { bottom: 0; }
 
 .focusHud span {
   display: block;
-  color: rgba(191, 153, 91, .68);
+  color: rgba(191, 153, 91, .76);
   font-size: 7px;
-  letter-spacing: .22em;
+  letter-spacing: .24em;
 }
 
 .focusHud b {
   display: block;
-  margin-top: 5px;
-  color: rgba(240, 233, 217, .9);
+  margin-top: 6px;
+  color: rgba(240, 233, 217, .93);
   font-size: 10px;
-  line-height: 1.25;
+  line-height: 1.28;
   letter-spacing: .12em;
   font-weight: 500;
+  text-shadow: 0 0 18px rgba(164, 119, 60, .08);
 }
 
 .focusHud small {
   display: block;
-  margin-top: 4px;
-  color: rgba(255,255,255,.34);
+  margin-top: 5px;
+  color: rgba(255,255,255,.36);
   font-size: 7px;
-  letter-spacing: .16em;
+  letter-spacing: .17em;
 }
 
 .focusHud i {
   position: absolute;
-  left: -3px;
-  top: 50%;
-  width: 5px;
-  height: 5px;
+  right: calc(100% + 52px);
+  top: 17px;
+  width: 9px;
+  height: 9px;
   border: 1px solid rgba(211, 178, 121, .78);
-  transform: translate(-50%, -50%) rotate(45deg);
-  box-shadow: 0 0 12px rgba(180, 134, 68, .28);
+  border-radius: 50%;
+  transform: translate(50%, -50%);
+  box-shadow:
+    0 0 0 4px rgba(164, 119, 61, .055),
+    0 0 16px rgba(180, 134, 68, .24);
+}
+
+.focusHud i::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: rgba(232, 205, 157, .9);
+  transform: translate(-50%, -50%);
+}
+
+.focusedCard {
+  border-color: rgba(178, 136, 76, .42) !important;
+  background: linear-gradient(180deg, rgba(116, 82, 42, .085), rgba(8, 8, 7, .035)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(222, 189, 132, .055),
+    0 12px 42px rgba(0, 0, 0, .16);
+  transform: translate3d(0, -2px, 0);
+}
+
+.focusedCard::before {
+  content: "FOCUS LOCK";
+  position: absolute;
+  right: 12px;
+  top: 10px;
+  color: rgba(188, 147, 85, .44);
+  font: 6px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .2em;
+  pointer-events: none;
 }
 
 .hidden {
   opacity: 0;
-  transform: translate(12px, 12px) scale(.97);
+  transform: translate(15px, 15px) scale(.975);
+}
+
+@keyframes focusLead {
+  from { opacity: 0; transform: scaleX(.2); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+
+@keyframes focusScan {
+  0% { opacity: 0; transform: translateX(-100%); }
+  18% { opacity: 1; }
+  78% { opacity: .55; }
+  100% { opacity: 0; transform: translateX(100%); }
 }
 
 @media (pointer: coarse), (max-width: 760px) {
   .focusHud { display: none; }
+  .focusedCard { transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .focusHud::before,
+  .focusHud::after { animation: none; }
 }
