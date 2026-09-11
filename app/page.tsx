@@ -8,6 +8,7 @@ import archiveFx from "./archive-transitions.module.css";
 import archiveMaterial from "./archive-material.module.css";
 import artifactFocus from "./artifact-focus.module.css";
 import archiveDecode from "./archive-decode.module.css";
+import heroSeal from "./hero-seal.module.css";
 
 const MAIN_PROFILE = "https://lavine-site.vercel.app/profile";
 const SCENE_LABELS = ["ORIGIN", "THRESHOLD", "LOGIC", "ARTIFACTS", "GATEWAY"];
@@ -52,6 +53,10 @@ const artifacts = [
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 const pulse = (value: number, center: number, radius: number) => Math.max(0, 1 - Math.abs(value - center) / radius);
+const smoothstep = (a: number, b: number, value: number) => {
+  const t = clamp((value - a) / Math.max(0.0001, b - a), 0, 1);
+  return t * t * (3 - 2 * t);
+};
 
 function sceneOpacity(position: number, center: number, radius = 0.54) {
   return clamp(1 - Math.abs(position - center) / radius, 0, 1);
@@ -116,6 +121,8 @@ export default function LavineArchive() {
       const breach = pulse(current, 0.235, 0.052);
       const logicCut = pulse(current, 0.505, 0.048);
       const vaultCut = pulse(current, 0.705, 0.055);
+      const sealTravel = smoothstep(0.018, 0.14, current);
+      const sealBreak = smoothstep(0.085, 0.182, current);
       stage.style.setProperty("--impact", impact.toFixed(4));
       stage.style.setProperty("--story-progress", current.toFixed(4));
       stage.style.setProperty("--gateway", clamp((current - 0.78) / 0.22, 0, 1).toFixed(4));
@@ -123,6 +130,8 @@ export default function LavineArchive() {
       stage.style.setProperty("--breach", breach.toFixed(4));
       stage.style.setProperty("--logic-cut", logicCut.toFixed(4));
       stage.style.setProperty("--vault-cut", vaultCut.toFixed(4));
+      stage.style.setProperty("--seal-travel", sealTravel.toFixed(4));
+      stage.style.setProperty("--seal-break", sealBreak.toFixed(4));
 
       const position = current * (SCENE_LABELS.length - 1);
       const nextScene = clamp(Math.round(position), 0, SCENE_LABELS.length - 1);
@@ -168,6 +177,18 @@ export default function LavineArchive() {
         <div className={`${archiveFx.vaultPerspective} ${archiveMaterial.perspectiveRefined}`} />
         <div className={`${archiveFx.goldAtmosphere} ${archiveMaterial.atmosphereRefined}`} />
         <div className={`${archiveFx.depthSlabs} ${archiveMaterial.slabsRefined}`} />
+      </div>
+
+      <div className={heroSeal.sceneLight} aria-hidden="true" />
+      <div className={heroSeal.seal} aria-hidden="true">
+        <div className={heroSeal.spokes}><i /><i /><i /><i /><i /><i /><i /><i /></div>
+        <div className={heroSeal.core}>
+          <div className={heroSeal.mark}>
+            <b>LX</b>
+            <span>888 / ARCHIVE SEAL</span>
+            <small>IDENTITY CORE / VERIFIED</small>
+          </div>
+        </div>
       </div>
 
       <div className={archiveFx.bootSequence} aria-hidden="true">
@@ -227,13 +248,6 @@ export default function LavineArchive() {
         </div>
         <a href={MAIN_PROFILE} className={styles.skip}>Enter profile ↗</a>
       </header>
-
-      <aside className={styles.telemetry} aria-hidden="true">
-        <div><span>SECTOR</span><b>PERSONAL ARCHIVE</b></div>
-        <div><span>ORIGIN</span><b>HK / SZ</b></div>
-        <div><span>STATE</span><b>IN MOTION</b></div>
-        <div><span>NODE</span><b>LX-888</b></div>
-      </aside>
 
       <aside className={styles.sceneRail} aria-label={`Scene ${activeScene + 1}: ${SCENE_LABELS[activeScene]}`}>
         <span className={styles.sceneNumber}>0{activeScene + 1}</span>
@@ -352,19 +366,6 @@ export default function LavineArchive() {
           <a href="https://github.com/lavine888" target="_blank" rel="noreferrer" className={styles.secondary}>GitHub / source</a>
         </div>
       </section>
-
-      <div className={cinematic.signalBand} aria-hidden="true">
-        <div>
-          <span>BUILD SYSTEMS</span><i />
-          <span>TEST REALITY</span><i />
-          <span>SHIP SIGNALS</span><i />
-          <span>ARCHIVE OBJECTS</span><i />
-          <span>BUILD SYSTEMS</span><i />
-          <span>TEST REALITY</span><i />
-          <span>SHIP SIGNALS</span><i />
-          <span>ARCHIVE OBJECTS</span><i />
-        </div>
-      </div>
 
       <div className={styles.progressTrack} aria-hidden="true">
         <div ref={progressRef} className={styles.progress} />
